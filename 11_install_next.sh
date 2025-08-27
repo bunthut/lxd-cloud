@@ -208,11 +208,7 @@ sleep 5
 
 echo "$($_ORANGE_)Container TEMPLATE: Update, upgrade and install common packages$($_WHITE_)"
 
-PACKAGES="git vim apt-utils bsd-mailx postfix"
-
-if [ "$DEBIAN_RELEASE" == "stretch" ] ; then
-    lxc exec z-template -- bash -c "echo 'deb http://ftp.fr.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list"
-fi
+PACKAGES="git vim apt-utils bsd-mailx postfix python3.12 python-is-python3"
 
 lxc exec z-template -- bash -c "
     apt-get update > /dev/null
