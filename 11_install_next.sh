@@ -59,6 +59,16 @@ source config/02_RESOURCES_VARS
 # - LXD_DEFAULT_STORAGE_TYPE
 source config/03_OTHER_VARS
 
+# Create temporary directory for this script
+TMP_DIR=$(mktemp -d)
+# Ensure the temporary directory is writable
+if [ ! -w "$TMP_DIR" ]; then
+    echo "$($_RED_)Temporary directory $TMP_DIR is not writable$($_WHITE_)"
+    exit 1
+fi
+# Remove the temporary directory on exit
+trap 'rm -rf "$TMP_DIR"' EXIT
+
 ################################################################################
 
 # Exit if LXD is not installed
@@ -170,7 +180,7 @@ EOF
 fi
 
 # TEMPLATE interfaces containers
-cat << EOF > /tmp/lxd_interfaces_TEMPLATE
+cat << EOF > "$TMP_DIR/lxd_interfaces_TEMPLATE"
 auto lo
 iface lo inet loopback
 
@@ -185,7 +195,7 @@ iface ethPrivate inet static
 EOF
 
 # TEMPLATE resolv.conf (see config/01_NETWORK_VARS to change nameserver)
-cat << EOF > /tmp/lxd_resolv.conf
+cat << EOF > "$TMP_DIR/lxd_resolv.conf"
 $RESOLV_CONF
 EOF
 
@@ -234,8 +244,8 @@ lxc exec z-template -- bash -c "
 
 # Postfix default conf file
 # Copy file in tmp becose « snap » is isoled, can't acess to root dir
-cp /etc/postfix/main.cf /tmp/template_postfix_main.cf
-lxc file push /tmp/template_postfix_main.cf z-template/etc/postfix/main.cf
+cp /etc/postfix/main.cf "$TMP_DIR/template_postfix_main.cf"
+lxc file push "$TMP_DIR/template_postfix_main.cf" z-template/etc/postfix/main.cf
 
 # Copy /etc/crontab for Send crontab return to admin (TECH_ADMIN_EMAIL)
 lxc file push /etc/crontab z-template/etc/crontab
@@ -255,9 +265,9 @@ for CT in $CT_LIST ; do
     lxc start ${CT}
     IP_PUB="IP_${CT}"
     IP_PRIV="IP_${CT}_PRIV"
-    sed -e "s/_IP_PUB_/${!IP_PUB}/" -e "s/_IP_PRIV_/${!IP_PRIV}/" -e "s/_CIDR_/$CIDR/" /tmp/lxd_interfaces_TEMPLATE > /tmp/lxd_interfaces_${CT}
-    lxc file push /tmp/lxd_interfaces_${CT} ${CT}/etc/network/interfaces
-    lxc file push /tmp/lxd_resolv.conf ${CT}/etc/resolv.conf
+    sed -e "s/_IP_PUB_/${!IP_PUB}/" -e "s/_IP_PRIV_/${!IP_PRIV}/" -e "s/_CIDR_/$CIDR/" "$TMP_DIR/lxd_interfaces_TEMPLATE" > "$TMP_DIR/lxd_interfaces_${CT}"
+    lxc file push "$TMP_DIR/lxd_interfaces_${CT}" ${CT}/etc/network/interfaces
+    lxc file push "$TMP_DIR/lxd_resolv.conf" ${CT}/etc/resolv.conf
     lxc restart $CT --force
 done
 
@@ -309,7 +319,7 @@ echo ""
 
 # Generate nextcloud database password
 MDP_nextcoud=$(openssl rand -base64 32)
-echo "$MDP_nextcoud" > /tmp/lxc_nextcloud_password
+echo "$MDP_nextcoud" > "$TMP_DIR/lxc_nextcloud_password"
 
 ./containers/23_configure_mariadb.sh
 
@@ -318,7 +328,7 @@ echo "$MDP_nextcoud" > /tmp/lxc_nextcloud_password
 ./containers/24_configure_cloud.sh
 
 # Delete nextcloud database password
-rm -f /tmp/lxc_nextcloud_password
+rm -f "$TMP_DIR/lxc_nextcloud_password"
 
 ############################################################
 #### COLLABORA
