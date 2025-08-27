@@ -113,6 +113,8 @@ PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host
 apt-get update > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade > /dev/null
+git config --global user.name "$HOSTNAME"
+git config --global user.email "root@$HOSTNAME"
 
 # Basic Debian configuration
 mkdir -p /srv/git
