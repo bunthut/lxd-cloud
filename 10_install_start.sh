@@ -105,12 +105,6 @@ echo "$($_ORANGE_)Update and Upgrade system packages and default apt configurati
 
 PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix"
 
-if [ "$DEBIAN_RELEASE" == "stretch" ] ; then
-    # Add backports
-    echo 'deb http://ftp.fr.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list
-fi
-
-
 apt-get update > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade > /dev/null
