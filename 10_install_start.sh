@@ -107,7 +107,7 @@ echo "$($_ORANGE_)Update and Upgrade system packages and default apt configurati
 PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 
 
-PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix git fail2ban ${PYTHON_PACKAGE} python-is-python3"
+PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate logwatch postfix git fail2ban ${PYTHON_PACKAGE} python-is-python3"
 
 
 
@@ -148,6 +148,13 @@ enabled = true
 EOF
 systemctl enable fail2ban >/dev/null 2>&1
 systemctl restart fail2ban >/dev/null 2>&1
+
+# Configure logwatch daily report
+cat << EOF > /etc/cron.daily/00logwatch
+#!/bin/bash
+logwatch --output mail --mailto "$TECH_ADMIN_EMAIL"
+EOF
+chmod +x /etc/cron.daily/00logwatch
 
 # Configure unattended upgrades notifications
 cat << EOF > /etc/apt/apt.conf.d/51unattended-upgrades-local
