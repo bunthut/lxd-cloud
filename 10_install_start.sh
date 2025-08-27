@@ -106,7 +106,9 @@ echo "$($_ORANGE_)Update and Upgrade system packages and default apt configurati
 # Allow overriding the Python package version; default to python3
 PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 
-PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix fail2ban ${PYTHON_PACKAGE} python-is-python3"
+
+PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix git fail2ban ${PYTHON_PACKAGE} python-is-python3"
+
 
 
 
@@ -115,16 +117,30 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade > /dev/null
 
 # Basic Debian configuration
-mkdir -p /srv/git
-git clone https://github.com/AlbanVidal/basic_config_debian.git /srv/git/basic_config_debian
-# Setup config file for auto configuration
->                                              /srv/git/basic_config_debian/conf
-echo "UNATTENDED_EMAIL='$TECH_ADMIN_EMAIL'" >> /srv/git/basic_config_debian/conf
-echo "GIT_USERNAME='$HOSTNAME'"             >> /srv/git/basic_config_debian/conf
-echo "GIT_EMAIL='root@$HOSTNAME'"           >> /srv/git/basic_config_debian/conf
-echo "SSH_EMAIL_ALERT='$TECH_ADMIN_EMAIL'"  >> /srv/git/basic_config_debian/conf
-# Launch auto configuration script
-/srv/git/basic_config_debian/auto_config.sh
+# Configure system mail alias for root
+echo "root: $TECH_ADMIN_EMAIL" >> /etc/aliases
+newaliases > /dev/null
+
+# Configure git defaults
+git config --global user.name "$HOSTNAME"
+git config --global user.email "root@$HOSTNAME"
+
+# Configure fail2ban with email notifications
+cat << EOF > /etc/fail2ban/jail.local
+[DEFAULT]
+destemail = $TECH_ADMIN_EMAIL
+sender = root@$HOSTNAME
+
+[sshd]
+enabled = true
+EOF
+systemctl enable fail2ban >/dev/null 2>&1
+systemctl restart fail2ban >/dev/null 2>&1
+
+# Configure unattended upgrades notifications
+cat << EOF > /etc/apt/apt.conf.d/51unattended-upgrades-local
+Unattended-Upgrade::Mail "$TECH_ADMIN_EMAIL";
+EOF
 
 #############
 
