@@ -2,7 +2,7 @@
 #### This file contain other tunable vars 
 ################################################################################
 
-NEXTCLOUD_URL="https://download.nextcloud.com/server/releases/nextcloud-13.0.5.tar.bz2"
+NEXTCLOUD_URL="https://download.nextcloud.com/server/releases/latest.tar.bz2"
 
 # Default MAX upload file size
 # The default value is 512M
@@ -44,7 +44,7 @@ CREATE_CERTIFICATES=true
 # LXD default storage type (driver) and size
 #
 # For test time, the following command is used:
-# time apt -y install apache2 php7.0
+# time apt -y install apache2 php8.2
 #
 ## LVM in loop device
 # Time: 1m31.501s

@@ -87,58 +87,30 @@ lxc exec cloud -- bash -c 'echo "sudo -u www-data php /var/www/nextcloud/occ \$@
                            '
 
 echo "$($_ORANGE_)Install packages for nextcloud...$($_WHITE_)"
-case $DEBIAN_RELEASE in
-    "stretch" )
-        # Debian 9 => php7.0
-        lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
-            wget            \
-            curl            \
-            sudo            \
-            apache2         \
-            mariadb-client  \
-            redis-server    \
-            libapache2-mod-rpaf \
-            php7.0 php-redis php7.0-fpm php7.0-xml php7.0-mysql php7.0-gd php7.0-zip php7.0-mbstring php7.0-curl php7.0-bz2 php7.0-intl php7.0-mcrypt php7.0-gmp \
-            > /dev/null"
-        ;;
-    "buster" )
-        # Debian 10 => php7.1
-        # Missing mcrypt on php7.2
-        lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
-            wget            \
-            curl            \
-            sudo            \
-            apache2         \
-            mariadb-client  \
-            redis-server    \
-            libapache2-mod-rpaf \
-            php7.1 php-redis php7.1-fpm php7.1-xml php7.1-mysql php7.1-gd php7.1-zip php7.1-mbstring php7.1-curl php7.1-bz2 php7.1-intl php7.1-mcrypt php7.1-gmp \
-            > /dev/null"
-        ;;
-esac
+lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    wget            \
+    curl            \
+    sudo            \
+    apache2         \
+    mariadb-client  \
+    redis-server    \
+    php8.2 php8.2-fpm php8.2-xml php8.2-mysql php8.2-gd php8.2-zip php8.2-mbstring php8.2-curl php8.2-bz2 php8.2-intl php8.2-gmp php8.2-redis \
+    > /dev/null"
 
 
 echo "$($_ORANGE_)apache2 FIX ServerName$($_WHITE_)"
 lxc exec cloud -- bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
                            a2enconf 99_ServerName > /dev/null"
 
-echo "$($_ORANGE_)Enable php7-fpm in apache2$($_WHITE_)"
-case $DEBIAN_RELEASE in
-    "stretch" )
-        lxc exec cloud -- bash -c "a2enmod proxy_fcgi setenvif > /dev/null
-                                   a2enconf php7.0-fpm > /dev/null"
-        ;;
-    "buster" )
-        lxc exec cloud -- bash -c "a2enmod proxy_fcgi setenvif > /dev/null
-                                   a2enconf php7.1-fpm > /dev/null"
-        ;;
-esac
+echo "$($_ORANGE_)Enable php8.2-fpm in apache2$($_WHITE_)"
+lxc exec cloud -- bash -c "a2enmod proxy_fcgi setenvif > /dev/null
+                           a2enconf php8.2-fpm > /dev/null"
 
 echo "$($_ORANGE_)Enable apache2 mods$($_WHITE_)"
 lxc exec cloud -- bash -c "a2enmod rewrite > /dev/null
-                           a2enmod headers env dir mime > /dev/null"
+                           a2enmod headers env dir mime remoteip > /dev/null"
 
-echo "$($_ORANGE_)Tuning opcache (php7) conf$($_WHITE_)"
+echo "$($_ORANGE_)Tuning opcache (php8.2) conf$($_WHITE_)"
 lxc exec cloud -- bash -c "sed -i                                                                              \
     -e 's/;opcache.enable=0/opcache.enable=1/'                                      \
     -e 's/;opcache.enable_cli=0/opcache.enable_cli=1/'                              \
@@ -147,17 +119,10 @@ lxc exec cloud -- bash -c "sed -i                                               
     -e 's/;opcache.memory_consumption=64/opcache.memory_consumption=128/'           \
     -e 's/;opcache.save_comments=1/opcache.save_comments=1/'                        \
     -e 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/'                    \
-    /etc/php/7.*/fpm/php.ini"
+    /etc/php/8.2/fpm/php.ini"
 
 echo "$($_ORANGE_)Restart FPM$($_WHITE_)"
-case $DEBIAN_RELEASE in
-    "stretch" )
-        lxc exec cloud -- bash -c "systemctl restart php7.0-fpm.service"
-        ;;
-    "buster" )
-        lxc exec cloud -- bash -c "systemctl restart php7.1-fpm.service"
-        ;;
-esac
+lxc exec cloud -- bash -c "systemctl restart php8.2-fpm.service"
 
 echo "$($_ORANGE_)Restart apache2$($_WHITE_)"
 lxc exec cloud -- bash -c "systemctl restart apache2.service"
@@ -328,7 +293,10 @@ echo "$($_ORANGE_)Set transparency client ip for Nextcloud and Apache$($_WHITE_)
 lxc exec cloud -- bash -c "
                            occ config:system:set trusted_proxies 0 --value='$IP_rvprx_PRIV'
                            occ config:system:set forwarded_for_headers 0 --value='HTTP_X_FORWARDED_FOR'
-                           sed -i 's/\\(.*RPAFproxy_ips\\).*/\\1 $IP_rvprx_PRIV/' /etc/apache2/mods-available/rpaf.conf
+                           cat << EOF > /etc/apache2/mods-available/remoteip.conf
+RemoteIPHeader X-Forwarded-For
+RemoteIPTrustedProxy $IP_rvprx_PRIV
+EOF
                            "
 
 ################################################################################
