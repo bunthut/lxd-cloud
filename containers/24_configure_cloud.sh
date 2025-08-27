@@ -213,7 +213,11 @@ echo "$($_ORANGE_)Reload apache2$($_WHITE_)"
 lxc exec cloud -- bash -c "systemctl reload apache2"
 
 echo "$($_ORANGE_)Nextcloud installation$($_WHITE_)"
-lxc exec cloud -- bash -c "occ maintenance:install --database 'mysql' --database-host '$IP_mariadb_PRIV' --database-name 'nextcloud'  --database-user 'nextcloud' --database-pass '$MDP_nextcoud' --admin-user '$NEXTCLOUD_admin_user' --admin-pass '$NEXTCLOUD_admin_password' --data-dir='$NEXTCLOUD_DATA_DIR'"
+if lxc exec cloud -- bash -c '[ -f /var/www/nextcloud/config/config.php ] || occ status >/dev/null 2>&1'; then
+    echo "$($_GREEN_)Existing Nextcloud installation detected - reusing instance$($_WHITE_)"
+else
+    lxc exec cloud -- bash -c "occ maintenance:install --database 'mysql' --database-host '$IP_mariadb_PRIV' --database-name 'nextcloud'  --database-user 'nextcloud' --database-pass '$MDP_nextcoud' --admin-user '$NEXTCLOUD_admin_user' --admin-pass '$NEXTCLOUD_admin_password' --data-dir='$NEXTCLOUD_DATA_DIR'"
+fi
 
 echo "$($_ORANGE_)Tune MAX upload file size$($_WHITE_)"
 lxc exec cloud -- bash -c "sed -i \
