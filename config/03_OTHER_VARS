@@ -36,6 +36,9 @@ CREATE_CERTIFICATES=true
 
 ################################################################################
 
+# Storage backend driver (btrfs, zfs, lvm)
+LXD_STORAGE_DRIVER="btrfs"
+
 # LXD default storage type (driver) and size
 #
 # For test time, the following command is used:
@@ -62,6 +65,17 @@ storage_pools:
   name: default
   driver: btrfs
 '
+
+## ZFS in loop device
+# Time: N/A
+LXD_STORAGE_LOOP_ZFS='
+storage_pools:
+- config:
+    size: 15GB
+  description: ""
+  name: default
+  driver: zfs
+'
 #
 ## LVM in bloc device
 # Time: 1m22.096s
@@ -85,12 +99,36 @@ storage_pools:
   driver: btrfs
 '
 
+## ZFS in bloc device
+# Time: N/A
+LXD_STORAGE_BLOC_ZFS='
+storage_pools:
+- config:
+    source: /dev/nbd1
+  description: ""
+  name: default
+  driver: zfs
+'
+
 # Set default storage:
 #
 # Bug with lvm !
 #LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_LVM"
 #
-LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
+case "$LXD_STORAGE_DRIVER" in
+  zfs)
+    LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_ZFS"
+    ;;
+  btrfs)
+    LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
+    ;;
+  lvm)
+    LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_LVM"
+    ;;
+  *)
+    LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
+    ;;
+esac
 
 ################################################################################
 
