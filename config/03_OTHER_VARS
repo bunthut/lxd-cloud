@@ -37,7 +37,21 @@ CREATE_CERTIFICATES=true
 ################################################################################
 
 # Storage backend driver (btrfs, zfs, lvm)
+# The existing default pool driver will override this value if detected.
 LXD_STORAGE_DRIVER="btrfs"
+
+# Detect the current storage pool driver to avoid conflicts when re-running the
+# initialization scripts. If a default pool already exists, its driver is used
+# and LXD initialization is skipped. To change the storage backend, remove the
+# existing pool (e.g. "lxc storage delete default") before running the install
+# scripts again.
+if command -v lxc >/dev/null 2>&1; then
+  current_driver="$(lxc storage show default 2>/dev/null | awk '/^driver:/ {print $2}')"
+  if [ -n "$current_driver" ]; then
+    LXD_STORAGE_DRIVER="$current_driver"
+    LXD_INIT=false
+  fi
+fi
 
 # LXD default storage type (driver) and size
 #
