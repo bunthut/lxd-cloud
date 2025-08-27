@@ -55,29 +55,30 @@ else
     echo ""
     echo "$($_ORANGE_)** TECHNICAL **$($_WHITE_)"
     echo ""
-    echo -n "$($_GREEN_)Internet network interface:$($_WHITE_) "
-    read INTERNET_ETH
-    echo -n "$($_GREEN_)FQDN:$($_WHITE_) "
-    read FQDN
-    echo -n "$($_GREEN_)Collabora FQDN:$($_WHITE_) "
-    read FQDN_collabora
-    echo -n "$($_GREEN_)Technical Administrator Email:$($_WHITE_) "
-    read TECH_ADMIN_EMAIL
+    read -p "$($_GREEN_)Internet network interface [$INTERNET_ETH]:$($_WHITE_) " input; INTERNET_ETH=${input:-$INTERNET_ETH}
+    read -p "$($_GREEN_)FQDN [$FQDN]:$($_WHITE_) " input; FQDN=${input:-$FQDN}
+    read -p "$($_GREEN_)Collabora FQDN [$FQDN_collabora]:$($_WHITE_) " input; FQDN_collabora=${input:-$FQDN_collabora}
+    read -p "$($_GREEN_)SMTP FQDN [$FQDN_smtp]:$($_WHITE_) " input; FQDN_smtp=${input:-$FQDN_smtp}
+    read -p "$($_GREEN_)HTTP port [$HTTP_PORT]:$($_WHITE_) " input; HTTP_PORT=${input:-$HTTP_PORT}
+    read -p "$($_GREEN_)HTTPS port [$HTTPS_PORT]:$($_WHITE_) " input; HTTPS_PORT=${input:-$HTTPS_PORT}
+    read -p "$($_GREEN_)Collabora port [$COLLABORA_PORT]:$($_WHITE_) " input; COLLABORA_PORT=${input:-$COLLABORA_PORT}
+    read -p "$($_GREEN_)Technical Administrator Email [$TECH_ADMIN_EMAIL]:$($_WHITE_) " input; TECH_ADMIN_EMAIL=${input:-$TECH_ADMIN_EMAIL}
 
     echo ""
     echo "$($_ORANGE_)** CLOUD **$($_WHITE_)"
     echo ""
-    echo -n "$($_GREEN_)Nextcloud Administrator User:$($_WHITE_) "
-    read NEXTCLOUD_admin_user
-    echo -n "$($_GREEN_)Nextcloud Administrator Email:$($_WHITE_) "
-    read NEXTCLOUD_admin_email
-    echo -n "$($_GREEN_)Nextcloud Administrator Password (hidden entry):$($_WHITE_) "
-    read -rs NEXTCLOUD_admin_password
+    read -p "$($_GREEN_)Nextcloud Administrator User [$NEXTCLOUD_admin_user]:$($_WHITE_) " input; NEXTCLOUD_admin_user=${input:-$NEXTCLOUD_admin_user}
+    read -p "$($_GREEN_)Nextcloud Administrator Email [$NEXTCLOUD_admin_email]:$($_WHITE_) " input; NEXTCLOUD_admin_email=${input:-$NEXTCLOUD_admin_email}
+    read -p "$($_GREEN_)Nextcloud Administrator Password (hidden entry):$($_WHITE_) " -rs input; NEXTCLOUD_admin_password=${input:-$NEXTCLOUD_admin_password}
 
     cat << EOF > config/00_VARS
 INTERNET_ETH="$INTERNET_ETH"
 FQDN="$FQDN"
 FQDN_collabora="$FQDN_collabora"
+FQDN_smtp="$FQDN_smtp"
+HTTP_PORT="$HTTP_PORT"
+HTTPS_PORT="$HTTPS_PORT"
+COLLABORA_PORT="$COLLABORA_PORT"
 TECH_ADMIN_EMAIL="$TECH_ADMIN_EMAIL"
 NEXTCLOUD_admin_user="$NEXTCLOUD_admin_user"
 NEXTCLOUD_admin_email="$NEXTCLOUD_admin_email"
@@ -225,10 +226,10 @@ cat << EOF > /etc/iptables/rules.v4
 # Internet Input (PREROUTING)
 -N zone_wan_PREROUTING
 -A PREROUTING -i $INTERNET_ETH -j zone_wan_PREROUTING -m comment --comment "Internet Input PREROUTING"
-# NAT 80 > RVPRX (nginx)
--A zone_wan_PREROUTING -p tcp -m tcp --dport 80 -j DNAT --to-destination $IP_rvprx:80 -m comment --comment "Routing port 80 > RVPRX - TCP"
-# NAT 443 > RVPRX (nginx)
--A zone_wan_PREROUTING -p tcp -m tcp --dport 443 -j DNAT --to-destination $IP_rvprx:443 -m comment --comment "Routing port 443 > RVPRX - TCP"
+# NAT ${HTTP_PORT} > RVPRX (nginx)
+-A zone_wan_PREROUTING -p tcp -m tcp --dport ${HTTP_PORT} -j DNAT --to-destination $IP_rvprx:${HTTP_PORT} -m comment --comment "Routing port ${HTTP_PORT} > RVPRX - TCP"
+# NAT ${HTTPS_PORT} > RVPRX (nginx)
+-A zone_wan_PREROUTING -p tcp -m tcp --dport ${HTTPS_PORT} -j DNAT --to-destination $IP_rvprx:${HTTPS_PORT} -m comment --comment "Routing port ${HTTPS_PORT} > RVPRX - TCP"
 COMMIT
 EOF
 iptables-restore /etc/iptables/rules.v4
