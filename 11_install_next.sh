@@ -210,10 +210,6 @@ echo "$($_ORANGE_)Container TEMPLATE: Update, upgrade and install common package
 
 PACKAGES="git vim apt-utils bsd-mailx postfix"
 
-if [ "$DEBIAN_RELEASE" == "stretch" ] ; then
-    lxc exec z-template -- bash -c "echo 'deb http://ftp.fr.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list"
-fi
-
 lxc exec z-template -- bash -c "
     apt-get update > /dev/null
     DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
