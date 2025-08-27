@@ -211,7 +211,6 @@ echo "$($_ORANGE_)Container TEMPLATE: Update, upgrade and install common package
 
 PACKAGES="git vim apt-utils bsd-mailx postfix python3.12 python-is-python3"
 
-
 lxc exec z-template -- bash -c "
     apt-get update > /dev/null
     DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
