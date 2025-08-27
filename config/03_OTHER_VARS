@@ -39,7 +39,7 @@ CREATE_CERTIFICATES=true
 # LXD default storage type (driver) and size
 #
 # For test time, the following command is used:
-# time apt -y install apache2 php7.0
+# time apt -y install apache2 php8.2
 #
 ## LVM in loop device
 # Time: 1m31.501s
