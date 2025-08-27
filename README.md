@@ -4,6 +4,10 @@ Full personal cloud
 # This project are split in multiple subproject
 
 To select the storage backend for LXD, edit `config/03_OTHER_VARS` and set `LXD_STORAGE_DRIVER` to either `btrfs` (default) or `zfs`.
+The scripts automatically detect the driver of an existing `default` storage pool
+and reuse it. To switch to a different backend, remove any conflicting pools
+first (for example `lxc storage delete default`) before rerunning the
+initialization.
 
 Please see :
 + [Installation and lxd configuration](https://github.com/AlbanVidal/install_conf_lxd)
