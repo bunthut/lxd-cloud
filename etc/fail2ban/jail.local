@@ -1,0 +1,5 @@
+[DEFAULT]
+destemail = "$TECH_ADMIN_EMAIL"
+
+[sshd]
+enabled = true

@@ -106,7 +106,7 @@ echo "$($_ORANGE_)Update and Upgrade system packages and default apt configurati
 # Allow overriding the Python package version; default to python3
 PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 
-PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix ${PYTHON_PACKAGE} python-is-python3"
+PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix fail2ban ${PYTHON_PACKAGE} python-is-python3"
 
 
 
@@ -163,6 +163,17 @@ EOF
 
 # Send crontab return to admin (TECH_ADMIN_EMAIL)
 sed -i "1s/^/# Send cron report to admin\nMAILTO='$TECH_ADMIN_EMAIL'\n\n/" /etc/crontab
+
+# Configure fail2ban
+echo "$($_ORANGE_)Configure: fail2ban$($_WHITE_)"
+cat << EOF > /etc/fail2ban/jail.local
+[DEFAULT]
+destemail = "$TECH_ADMIN_EMAIL"
+
+[sshd]
+enabled = true
+EOF
+systemctl enable --now fail2ban > /dev/null
 
 # Nat post 80 and 443 => RVPRX
 # Enable Masquerade and NAT rules
