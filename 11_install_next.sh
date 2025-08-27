@@ -274,19 +274,26 @@ PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 PACKAGES="git vim apt-utils bsd-mailx postfix ${PYTHON_PACKAGE} python-is-python3"
 
 
+# Initial package installation in the template container
 lxc exec z-template -- bash -c "
     apt-get update > /dev/null
     DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
     DEBIAN_FRONTEND=noninteractive apt-get -y upgrade > /dev/null
-    # Basic Debian configuration
-    mkdir -p /srv/git
-    git clone https://github.com/AlbanVidal/basic_config_debian.git /srv/git/basic_config_debian
+    mkdir -p /srv/git/basic_config_debian
+"
+
+# Use local basic_config_debian instead of cloning from the Internet
+lxc file push templates/basic_config_debian/auto_config.sh \
+    z-template/srv/git/basic_config_debian/auto_config.sh
+
+lxc exec z-template -- bash -c "
     # Setup config file for auto configuration
-    >                                                /srv/git/basic_config_debian/conf
+    > /srv/git/basic_config_debian/conf
     echo 'UNATTENDED_EMAIL=\"$TECH_ADMIN_EMAIL\"' >> /srv/git/basic_config_debian/conf
     echo 'GIT_USERNAME=\"$HOSTNAME\"'             >> /srv/git/basic_config_debian/conf
     echo 'GIT_EMAIL=\"root@$HOSTNAME\"'           >> /srv/git/basic_config_debian/conf
     echo 'SSH_EMAIL_ALERT=\"$TECH_ADMIN_EMAIL\"'  >> /srv/git/basic_config_debian/conf
+    chmod +x /srv/git/basic_config_debian/auto_config.sh
     # Launch auto configuration script
     /srv/git/basic_config_debian/auto_config.sh
 "
