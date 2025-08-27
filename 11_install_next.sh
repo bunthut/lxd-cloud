@@ -208,7 +208,10 @@ sleep 5
 
 echo "$($_ORANGE_)Container TEMPLATE: Update, upgrade and install common packages$($_WHITE_)"
 
-PACKAGES="git vim apt-utils bsd-mailx postfix"
+
+
+PACKAGES="git vim apt-utils bsd-mailx postfix python3.12 python-is-python3"
+
 
 lxc exec z-template -- bash -c "
     apt-get update > /dev/null

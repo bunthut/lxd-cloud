@@ -72,7 +72,9 @@ echo "$($_ORANGE_)Install specific packages$($_WHITE_)"
 lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install nginx iptables > /dev/null"
 
 # Certbot for Nginx
+
 lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install certbot python3-certbot-nginx > /dev/null"
+
 
 
 # conf file letsencrypt

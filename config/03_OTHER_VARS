@@ -2,7 +2,7 @@
 #### This file contain other tunable vars 
 ################################################################################
 
-NEXTCLOUD_URL="https://download.nextcloud.com/server/releases/nextcloud-13.0.5.tar.bz2"
+NEXTCLOUD_URL="https://download.nextcloud.com/server/releases/latest.tar.bz2"
 
 # Default MAX upload file size
 # The default value is 512M
@@ -25,12 +25,7 @@ NEXTCLOUD_DATA_DIR="/srv/data/cloud"
 LXD_DEPORTED_DIR="/srv/lxd"
 
 ## Debian release
-#
-# - stretch => OK
-# - buster  => TESTS IN PROGRESS
-#
-DEBIAN_RELEASE="stretch"
-#DEBIAN_RELEASE="buster"
+DEBIAN_RELEASE="bookworm"
 
 # If you have already configured lxd manually (lxd init), set that to false
 LXD_INIT=true
@@ -103,4 +98,9 @@ LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
 # see https://linuxcontainers.org/lxd/news/
 # 2.0 (11/04/2016) with a 5 years support commitment from upstream, ending on 1st of June 2021
 # 3.0 (02/04/2018) will be supported until June 2023
-LXD_VERSION="3.0"
+LXD_VERSION="5.0/stable"
+
+# LXD snap channel
+# see https://snapcraft.io/lxd for available channels
+LXD_SNAP_CHANNEL="latest/stable"
+
