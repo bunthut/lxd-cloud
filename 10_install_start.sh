@@ -114,6 +114,16 @@ apt-get update > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y install $PACKAGES > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get -y upgrade > /dev/null
 
+# Configure unattended upgrades and notifications
+sed -E -i "s|^(//\s*)?Unattended-Upgrade::Mail.*|Unattended-Upgrade::Mail \"$TECH_ADMIN_EMAIL\";|" /etc/apt/apt.conf.d/50unattended-upgrades
+sed -E -i 's|^(//\s*)?Unattended-Upgrade::Automatic-Reboot.*|Unattended-Upgrade::Automatic-Reboot "true";|' /etc/apt/apt.conf.d/50unattended-upgrades
+cat << EOF > /etc/apt/apt.conf.d/20auto-upgrades
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+sed -E -i "s|^email_address=.*|email_address=$TECH_ADMIN_EMAIL|" /etc/apt/listchanges.conf
+sed -E -i 's|^which=.*|which=news|' /etc/apt/listchanges.conf
+
 # Basic Debian configuration
 mkdir -p /srv/git
 git clone https://github.com/AlbanVidal/basic_config_debian.git /srv/git/basic_config_debian
