@@ -15,3 +15,20 @@ Please see :
 + [Deploy of Wordpress](https://github.com/AlbanVidal/deploy_wordpress)
 + [Deploy of Icinga2](https://github.com/AlbanVidal/deploy_icinga)
 
+## Installation
+
+Use the `install.sh` helper to run the various setup steps. Run all components:
+
+```
+./install.sh --all
+```
+
+Install only specific components by combining flags:
+
+```
+./install.sh --nextcloud --mariadb
+./install.sh --smtp
+```
+
+Run `./install.sh --help` to see all available options.
+
