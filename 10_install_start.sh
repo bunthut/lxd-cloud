@@ -103,8 +103,10 @@ source config/03_OTHER_VARS
 #############
 echo "$($_ORANGE_)Update and Upgrade system packages and default apt configuration$($_WHITE_)"
 
+# Allow overriding the Python package version; default to python3
+PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 
-PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix python3.12 python-is-python3"
+PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix ${PYTHON_PACKAGE} python-is-python3"
 
 
 

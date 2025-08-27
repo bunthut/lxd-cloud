@@ -209,8 +209,10 @@ sleep 5
 echo "$($_ORANGE_)Container TEMPLATE: Update, upgrade and install common packages$($_WHITE_)"
 
 
+# Allow overriding the Python package version; default to python3
+PYTHON_PACKAGE=${PYTHON_PACKAGE:-python3}
 
-PACKAGES="git vim apt-utils bsd-mailx postfix python3.12 python-is-python3"
+PACKAGES="git vim apt-utils bsd-mailx postfix ${PYTHON_PACKAGE} python-is-python3"
 
 
 lxc exec z-template -- bash -c "
