@@ -186,8 +186,13 @@ EOF
 iptables-restore /etc/iptables/rules.v4
 
 ##### DEBIAN
-echo "$($_ORANGE_)Install: snapd, udev and btrfs$($_WHITE_)"
-DEBIAN_FRONTEND=noninteractive apt-get -y install snapd udev btrfs-progs > /dev/null
+if [ "$LXD_STORAGE_DRIVER" = "zfs" ]; then
+    echo "$($_ORANGE_)Install: snapd, udev and zfs$($_WHITE_)"
+    DEBIAN_FRONTEND=noninteractive apt-get -y install snapd udev zfsutils-linux > /dev/null
+else
+    echo "$($_ORANGE_)Install: snapd, udev and btrfs$($_WHITE_)"
+    DEBIAN_FRONTEND=noninteractive apt-get -y install snapd udev btrfs-progs > /dev/null
+fi
 DEBIAN_FRONTEND=noninteractive apt-get clean
 
 echo "$($_ORANGE_)Install: LXD with snap$($_WHITE_)"
