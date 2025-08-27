@@ -71,6 +71,29 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 
 ################################################################################
 
+# Determine which components to install. If no arguments are supplied, install
+# all available components. Components correspond to container names used later
+# in the script (smtp, rvprx, mariadb, cloud, collabora).
+DEFAULT_COMPONENTS=(smtp rvprx mariadb cloud collabora)
+if [ "$#" -eq 0 ]; then
+    COMPONENTS=("${DEFAULT_COMPONENTS[@]}")
+else
+    COMPONENTS=("$@")
+fi
+
+has_component() {
+    local comp
+    for comp in "${COMPONENTS[@]}"; do
+        [[ $comp == "$1" ]] && return 0
+    done
+    return 1
+}
+
+# Convenience variable for loops later
+CT_LIST="${COMPONENTS[*]}"
+
+################################################################################
+
 # Exit if LXD is not installed
 if ! which lxd >/dev/null;then
     echo "$($_RED_)LXD is not installed$($_WHITE_)"
@@ -180,14 +203,22 @@ EOF
 fi
 
 # Ensure required LXD profiles exist
-REQUIRED_PROFILES=(
-    "default" "privNet" \
-    "$LXC_PROFILE_cloud_CPU" "$LXC_PROFILE_cloud_MEM" \
-    "$LXC_PROFILE_collabora_CPU" "$LXC_PROFILE_collabora_MEM" \
-    "$LXC_PROFILE_mariadb_CPU" "$LXC_PROFILE_mariadb_MEM" \
-    "$LXC_PROFILE_rvprx_CPU" "$LXC_PROFILE_rvprx_MEM" \
-    "$LXC_PROFILE_smtp_CPU" "$LXC_PROFILE_smtp_MEM"
-)
+REQUIRED_PROFILES=("default" "privNet")
+if has_component cloud; then
+    REQUIRED_PROFILES+=("$LXC_PROFILE_cloud_CPU" "$LXC_PROFILE_cloud_MEM")
+fi
+if has_component collabora; then
+    REQUIRED_PROFILES+=("$LXC_PROFILE_collabora_CPU" "$LXC_PROFILE_collabora_MEM")
+fi
+if has_component mariadb; then
+    REQUIRED_PROFILES+=("$LXC_PROFILE_mariadb_CPU" "$LXC_PROFILE_mariadb_MEM")
+fi
+if has_component rvprx; then
+    REQUIRED_PROFILES+=("$LXC_PROFILE_rvprx_CPU" "$LXC_PROFILE_rvprx_MEM")
+fi
+if has_component smtp; then
+    REQUIRED_PROFILES+=("$LXC_PROFILE_smtp_CPU" "$LXC_PROFILE_smtp_MEM")
+fi
 
 PROFILE_LIST="$(lxc profile list -c n --format csv 2>/dev/null)"
 for profile in $(printf '%s\n' "${REQUIRED_PROFILES[@]}" | sort -u); do
@@ -273,10 +304,7 @@ lxc stop z-template --force
 ################################################################################
 
 # Create all container from template
-echo "$($_ORANGE_)Create and network configuration for all containers$($_WHITE_)"
-
-CT_LIST="smtp rvprx mariadb cloud collabora"
-
+echo "$($_ORANGE_)Create and network configuration for selected containers$($_WHITE_)"
 for CT in $CT_LIST ; do
     echo "$($_ORANGE_)Create ${CT}...$($_WHITE_)"
     lxc copy z-template ${CT}
@@ -294,25 +322,31 @@ done
 # Create and attach deported directory
 echo "$($_ORANGE_)Create and attach deported directory ($LXD_DEPORTED_DIR/…)$($_WHITE_)"
 
-## RVPRX
-## - Nginx configuration
-## - letsencrypt certificates
-mkdir -p \
-    $LXD_DEPORTED_DIR/rvprx/etc/nginx        \
-    $LXD_DEPORTED_DIR/rvprx/etc/letsencrypt
-lxc config device add rvprx shared-rvprx disk path=/srv/lxd source=$LXD_DEPORTED_DIR/rvprx/
+if has_component rvprx; then
+    ## RVPRX
+    ## - Nginx configuration
+    ## - letsencrypt certificates
+    mkdir -p \
+        $LXD_DEPORTED_DIR/rvprx/etc/nginx        \
+        $LXD_DEPORTED_DIR/rvprx/etc/letsencrypt
+    lxc config device add rvprx shared-rvprx disk path=/srv/lxd source=$LXD_DEPORTED_DIR/rvprx/
+fi
 
-## Cloud
-## - Nextcloud html directory
-mkdir -p \
-    $LXD_DEPORTED_DIR/cloud/var/www
-lxc config device add cloud shared-cloud disk path=/srv/lxd source=$LXD_DEPORTED_DIR/cloud/
+if has_component cloud; then
+    ## Cloud
+    ## - Nextcloud html directory
+    mkdir -p \
+        $LXD_DEPORTED_DIR/cloud/var/www
+    lxc config device add cloud shared-cloud disk path=/srv/lxd source=$LXD_DEPORTED_DIR/cloud/
+fi
 
-## Mariadb
-## - Tempory directory for MySQL dump
-mkdir -p \
-    $LXD_DEPORTED_DIR/mariadb
-lxc config device add mariadb shared-mariadb disk path=/srv/lxd source=$LXD_DEPORTED_DIR/mariadb
+if has_component mariadb; then
+    ## Mariadb
+    ## - Tempory directory for MySQL dump
+    mkdir -p \
+        $LXD_DEPORTED_DIR/mariadb
+    lxc config device add mariadb shared-mariadb disk path=/srv/lxd source=$LXD_DEPORTED_DIR/mariadb
+fi
 
 # Set mapped UID and GID to LXD deported directory
 echo "$($_ORANGE_)Set mapped UID and GID to LXD deported directory ($LXD_DEPORTED_DIR)$($_WHITE_)"
@@ -324,32 +358,42 @@ echo ""
 echo "$($_GREEN_)CONTAINER CONFIGURATION$($_WHITE_)"
 echo ""
 
-############################################################
-#### SMTP
-./containers/21_configure_smtp.sh
+if has_component smtp; then
+    ############################################################
+    #### SMTP
+    ./containers/21_configure_smtp.sh
+fi
 
-############################################################
-#### RVPRX
-./containers/22_configure_rvprx.sh
+if has_component rvprx; then
+    ############################################################
+    #### RVPRX
+    ./containers/22_configure_rvprx.sh
+fi
 
-############################################################
-#### MariaDB
+if has_component mariadb; then
+    ############################################################
+    #### MariaDB
+    # Generate nextcloud database password
+    MDP_nextcoud=$(openssl rand -base64 32)
+    echo "$MDP_nextcoud" > /tmp/lxc_nextcloud_password
+    ./containers/23_configure_mariadb.sh
+fi
 
-# Generate nextcloud database password
-MDP_nextcoud=$(openssl rand -base64 32)
-echo "$MDP_nextcoud" > "$TMP_DIR/lxc_nextcloud_password"
+if has_component cloud; then
+    ############################################################
+    #### CLOUD
+    ./containers/24_configure_cloud.sh
+fi
 
-./containers/23_configure_mariadb.sh
+if has_component mariadb; then
+    # Delete nextcloud database password if created
+    rm -f /tmp/lxc_nextcloud_password
+fi
 
-############################################################
-#### CLOUD
-./containers/24_configure_cloud.sh
-
-# Delete nextcloud database password
-rm -f "$TMP_DIR/lxc_nextcloud_password"
-
-############################################################
-#### COLLABORA
-./containers/25_configure_collabora.sh
+if has_component collabora; then
+    ############################################################
+    #### COLLABORA
+    ./containers/25_configure_collabora.sh
+fi
 
 ################################################################################
