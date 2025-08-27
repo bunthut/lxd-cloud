@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+
+{% block title %}Dockbin results{% endblock %}
+
+{% block content %}
+<div class="tiles">
+  {% for tile in tiles %}
+  <a class="tile" href="{{ url_for('dockbin.show', id=tile.id) }}">
+    <h2>{{ tile.title }}</h2>
+    <p>{{ tile.blurb }}</p>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
