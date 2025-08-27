@@ -72,12 +72,7 @@ echo "$($_ORANGE_)Install specific packages$($_WHITE_)"
 lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install nginx iptables > /dev/null"
 
 # Certbot for Nginx
-if [ "$DEBIAN_RELEASE" == "stretch" ] ; then
-    # If stretch release, install with backports (not available in std repo)
-    lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install python3-certbot-nginx/stretch-backports > /dev/null"
-else
-    lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install python3-certbot-nginx > /dev/null"
-fi
+lxc exec rvprx -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install python3-certbot-nginx > /dev/null"
 
 
 # conf file letsencrypt
