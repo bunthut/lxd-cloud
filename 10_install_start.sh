@@ -103,12 +103,9 @@ source config/03_OTHER_VARS
 #############
 echo "$($_ORANGE_)Update and Upgrade system packages and default apt configuration$($_WHITE_)"
 
-PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix"
 
-if [ "$DEBIAN_RELEASE" == "stretch" ] ; then
-    # Add backports
-    echo 'deb http://ftp.fr.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list
-fi
+PACKAGES="vim apt-utils bsd-mailx unattended-upgrades apt-listchanges bind9-host logrotate postfix python3.12 python-is-python3"
+
 
 
 apt-get update > /dev/null
@@ -189,12 +186,12 @@ EOF
 iptables-restore /etc/iptables/rules.v4
 
 ##### DEBIAN
-echo "$($_ORANGE_)Install: snapd, udev, btrfs and lvm$($_WHITE_)"
-DEBIAN_FRONTEND=noninteractive apt-get -y install snapd udev btrfs-tools lvm2 thin-provisioning-tools > /dev/null
+echo "$($_ORANGE_)Install: snapd, udev and btrfs$($_WHITE_)"
+DEBIAN_FRONTEND=noninteractive apt-get -y install snapd udev btrfs-progs > /dev/null
 DEBIAN_FRONTEND=noninteractive apt-get clean
 
 echo "$($_ORANGE_)Install: LXD with snap$($_WHITE_)"
-snap install lxd --channel="$LXD_VERSION"
+snap install lxd --channel="$LXD_SNAP_CHANNEL"
 
 ##### UBUNTU
 ## Install LXD package

@@ -94,15 +94,22 @@ lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
     apache2         \
     mariadb-client  \
     redis-server    \
-    php8.2 php8.2-fpm php8.2-xml php8.2-mysql php8.2-gd php8.2-zip php8.2-mbstring php8.2-curl php8.2-bz2 php8.2-intl php8.2-gmp php8.2-redis \
-    > /dev/null"
+# LXD Version (with snap)
+# see https://linuxcontainers.org/lxd/news/
+# 2.0 (11/04/2016) with a 5 years support commitment from upstream, ending on 1st of June 2021
+# 3.0 (02/04/2018) will be supported until June 2023
+LXD_VERSION="5.0/stable"
+
+# LXD snap channel
+# see https://snapcraft.io/lxd for available channels
+LXD_SNAP_CHANNEL="latest/stable"
+
 
 
 echo "$($_ORANGE_)apache2 FIX ServerName$($_WHITE_)"
 lxc exec cloud -- bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
                            a2enconf 99_ServerName > /dev/null"
-
-echo "$($_ORANGE_)Enable php8.2-fpm in apache2$($_WHITE_)"
+echo "$($_ORANGE_)Enable php-fpm in apache2$($_WHITE_)"
 lxc exec cloud -- bash -c "a2enmod proxy_fcgi setenvif > /dev/null
                            a2enconf php8.2-fpm > /dev/null"
 
@@ -110,7 +117,7 @@ echo "$($_ORANGE_)Enable apache2 mods$($_WHITE_)"
 lxc exec cloud -- bash -c "a2enmod rewrite > /dev/null
                            a2enmod headers env dir mime remoteip > /dev/null"
 
-echo "$($_ORANGE_)Tuning opcache (php8.2) conf$($_WHITE_)"
+echo "$($_ORANGE_)Tuning opcache (php) conf$($_WHITE_)"
 lxc exec cloud -- bash -c "sed -i                                                                              \
     -e 's/;opcache.enable=0/opcache.enable=1/'                                      \
     -e 's/;opcache.enable_cli=0/opcache.enable_cli=1/'                              \
@@ -119,7 +126,8 @@ lxc exec cloud -- bash -c "sed -i                                               
     -e 's/;opcache.memory_consumption=64/opcache.memory_consumption=128/'           \
     -e 's/;opcache.save_comments=1/opcache.save_comments=1/'                        \
     -e 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=1/'                    \
-    /etc/php/8.2/fpm/php.ini"
+    /etc/php/8.*/fpm/php.ini"
+
 
 echo "$($_ORANGE_)Restart FPM$($_WHITE_)"
 lxc exec cloud -- bash -c "systemctl restart php8.2-fpm.service"
