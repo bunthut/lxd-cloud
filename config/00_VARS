@@ -1,0 +1,122 @@
+################################################################################
+#### Global configuration variables
+################################################################################
+
+# Technical administrator contact
+TECH_ADMIN_EMAIL="admin@example.com"
+
+# Fully qualified domain names
+FQDN="cloud.example.com"
+FQDN_collabora="office.example.com"
+
+# Nextcloud administrator credentials
+NEXTCLOUD_admin_user="admin"
+NEXTCLOUD_admin_password="change_me"
+NEXTCLOUD_admin_email="admin@example.com"
+
+################################################################################
+# Network settings
+################################################################################
+# /etc/resolv.conf content for containers
+RESOLV_CONF="# OpenDNS:
+nameserver 208.67.222.222
+nameserver 208.67.220.220"
+
+# CIDR for networks
+CIDR=24
+
+# Public network
+lxdbrEXT_DHCP_RANGE="192.168.100.100-192.168.100.199"
+IP_LXD="192.168.100.1"
+IP_cloud="192.168.100.2"
+IP_collabora="192.168.100.3"
+IP_mariadb="192.168.100.4"
+IP_rvprx="192.168.100.5"
+IP_smtp="192.168.100.6"
+
+# Private network
+IP_LXD_PRIV="192.168.200.1"
+IP_cloud_PRIV="192.168.200.2"
+IP_collabora_PRIV="192.168.200.3"
+IP_mariadb_PRIV="192.168.200.4"
+IP_rvprx_PRIV="192.168.200.5"
+IP_smtp_PRIV="192.168.200.6"
+PRIVATE_NETWORK="192.168.200.0/24"
+
+################################################################################
+# Resource profiles
+################################################################################
+LXC_PROFILE_cloud_CPU="cpu-1"
+LXC_PROFILE_cloud_MEM="ram-512"
+LXC_PROFILE_collabora_CPU="cpu-1"
+LXC_PROFILE_collabora_MEM="ram-512"
+LXC_PROFILE_mariadb_CPU="cpu-1"
+LXC_PROFILE_mariadb_MEM="ram-256"
+LXC_PROFILE_rvprx_CPU="cpu-1"
+LXC_PROFILE_rvprx_MEM="ram-256"
+LXC_PROFILE_smtp_CPU="cpu-1"
+LXC_PROFILE_smtp_MEM="ram-256"
+
+################################################################################
+# Miscellaneous settings
+################################################################################
+NEXTCLOUD_URL="https://download.nextcloud.com/server/releases/latest.tar.bz2"
+MAX_UPLOAD_FILE_SIZE="5G"
+LANGUAGE="fr"
+TIME_ZONE="Europe/Paris"
+NEXTCLOUD_LOG_ROTATE_SIZE="100"
+NEXTCLOUD_DATA_DIR="/srv/data/cloud"
+LXD_DEPORTED_DIR="/srv/lxd"
+DEBIAN_RELEASE="bookworm"
+LXD_INIT=true
+CREATE_CERTIFICATES=true
+
+################################################################################
+# LXD storage configuration
+################################################################################
+LXD_STORAGE_LOOP_LVM='
+storage_pools:
+- config:
+    size: 15GB
+  description: ""
+  name: default
+  driver: lvm
+'
+
+LXD_STORAGE_LOOP_BTRFS='
+storage_pools:
+- config:
+    size: 15GB
+  description: ""
+  name: default
+  driver: btrfs
+'
+
+LXD_STORAGE_BLOC_LVM='
+storage_pools:
+- config:
+    source: /dev/nbd1
+  description: ""
+  name: default
+  driver: lvm
+'
+
+LXD_STORAGE_BLOC_BTRFS='
+storage_pools:
+- config:
+    source: /dev/nbd1
+  description: ""
+  name: default
+  driver: btrfs
+'
+
+# Default storage backend
+LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
+
+# LXD snap information
+LXD_VERSION="5.0/stable"
+LXD_SNAP_CHANNEL="latest/stable"
+
+# Container list used by installation scripts
+CT_LIST="smtp rvprx mariadb cloud collabora"
+
