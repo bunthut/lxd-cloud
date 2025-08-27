@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dock bin</title>
+</head>
+<body>
+    <input type="text" id="command"><input type="button" value="dock" onclick="dock()">
+    <input type="button" value="reset" onclick="resetDock()">
+    <div><span id="dock"></span></div>
+    <script>
+        let n = 0;
+        if (localStorage.getItem(n)) {
+            n = Number(localStorage.getItem("n")) + 1;
+        }
+        let command = document.getElementById("command");
+        let dock = document.getElementById("dock");
+        addEventListener("keydown", (e) => {
+            if (e.keyCode == 13 && command.value) { dock(); }
+        });
+        function dock() {
+            localStorage.setItem(n, command.value);
+            n++;
+            localStorage.setItem("n", n);
+            command.value = "";
+            renderDock();
+        }
+        function renderDock() {
+            dock.innerHTML = "";
+            for (let i = 0; i < 1000; i++) {
+                if (localStorage.getItem(i)) {
+                    dock.innerHTML += localStorage.getItem(i) + "<br>";
+                }
+            }
+        }
+        function resetDock() {
+            localStorage.clear();
+            dock.innerHTML = "";
+        }
+        renderDock();
+    </script>
+</body>
+</html>
