@@ -179,6 +179,24 @@ profiles:
 EOF
 fi
 
+# Ensure required LXD profiles exist
+REQUIRED_PROFILES=(
+    "default" "privNet" \
+    "$LXC_PROFILE_cloud_CPU" "$LXC_PROFILE_cloud_MEM" \
+    "$LXC_PROFILE_collabora_CPU" "$LXC_PROFILE_collabora_MEM" \
+    "$LXC_PROFILE_mariadb_CPU" "$LXC_PROFILE_mariadb_MEM" \
+    "$LXC_PROFILE_rvprx_CPU" "$LXC_PROFILE_rvprx_MEM" \
+    "$LXC_PROFILE_smtp_CPU" "$LXC_PROFILE_smtp_MEM"
+)
+
+PROFILE_LIST="$(lxc profile list -c n --format csv 2>/dev/null)"
+for profile in $(printf '%s\n' "${REQUIRED_PROFILES[@]}" | sort -u); do
+    if ! grep -qx "$profile" <<< "$PROFILE_LIST"; then
+        echo "$($_RED_)LXD profile '$profile' is missing. Please fix LXD initialization before running this script.$($_WHITE_)"
+        exit 1
+    fi
+done
+
 # TEMPLATE interfaces containers
 cat << EOF > "$TMP_DIR/lxd_interfaces_TEMPLATE"
 auto lo
