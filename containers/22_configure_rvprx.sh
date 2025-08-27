@@ -105,13 +105,13 @@ lxc file push $GIT_PATH/templates/rvprx/etc_nginx_RVPRX_common.conf rvprx/etc/ng
 # RVPRX vhosts
 cat << EOF > /tmp_lxd_rvprx_etc_nginx_rvprx-cloud
 server {
-    listen      80;
+    listen      ${HTTP_PORT};
     server_name $FQDN;
     return 301  https://$FQDN\$request_uri;
 }
 
 server {
-    listen      443 ssl http2;
+    listen      ${HTTPS_PORT} ssl http2;
     server_name $FQDN;
 
     # Let's Encrypt:
@@ -126,20 +126,20 @@ server {
     access_log /var/log/nginx/cloud_access.log;
     error_log  /var/log/nginx/cloud_error.log;
 
-    location / { proxy_pass http://$IP_cloud_PRIV/; }
+    location / { proxy_pass http://$IP_cloud_PRIV:${HTTP_PORT}/; }
 }
 EOF
 lxc file push /tmp_lxd_rvprx_etc_nginx_rvprx-cloud rvprx/etc/nginx/sites-available/rvprx-cloud
 
 cat << EOF > /tmp_lxd_rvprx_etc_nginx_rvprx-collabora
 server {
-    listen      80;
+    listen      ${HTTP_PORT};
     server_name $FQDN_collabora;
     return 301  https://$FQDN_collabora\$request_uri;
 }
 
 server {
-    listen      443 ssl http2;
+    listen      ${HTTPS_PORT} ssl http2;
     server_name $FQDN_collabora;
 
     # Let's Encrypt:
@@ -156,19 +156,19 @@ server {
 
     # static files
     location ^~ /loleaflet {
-        proxy_pass https://$IP_collabora_PRIV:9980;
+        proxy_pass https://$IP_collabora_PRIV:${COLLABORA_PORT};
         proxy_set_header Host \$http_host;
     }
 
     # WOPI discovery URL
     location ^~ /hosting/discovery {
-        proxy_pass https://$IP_collabora_PRIV:9980;
+        proxy_pass https://$IP_collabora_PRIV:${COLLABORA_PORT};
         proxy_set_header Host \$http_host;
     }
 
    # main websocket
    location ~ ^/lool/(.*)/ws$ {
-       proxy_pass https://$IP_collabora_PRIV:9980;
+       proxy_pass https://$IP_collabora_PRIV:${COLLABORA_PORT};
        proxy_set_header Upgrade \$http_upgrade;
        proxy_set_header Connection "Upgrade";
        proxy_set_header Host \$http_host;
@@ -177,13 +177,13 @@ server {
    
    # download, presentation and image upload
    location ~ ^/lool {
-       proxy_pass https://$IP_collabora_PRIV:9980;
+       proxy_pass https://$IP_collabora_PRIV:${COLLABORA_PORT};
        proxy_set_header Host \$http_host;
    }
    
    # Admin Console websocket
    location ^~ /lool/adminws {
-       proxy_pass https://$IP_collabora_PRIV:9980;
+       proxy_pass https://$IP_collabora_PRIV:${COLLABORA_PORT};
        proxy_set_header Upgrade \$http_upgrade;
        proxy_set_header Connection "Upgrade";
        proxy_set_header Host \$http_host;

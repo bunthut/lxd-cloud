@@ -92,15 +92,15 @@ inet_interfaces = 127.0.0.1, _IP_SMTP_
 inet_protocols = ipv4
 EOF
 sed -i                                         \
-    -e "s#_myhostname_#$FQDN#"                 \
+    -e "s#_myhostname_#$FQDN_smtp#"            \
     -e "s#_PRIVATE_NETWORK_#$PRIVATE_NETWORK#" \
     -e "s#_IP_SMTP_#$IP_smtp_PRIV#"            \
     /tmp_lxd_smtp_etc_postfix_main.cf
 
 lxc file push /tmp_lxd_smtp_etc_postfix_main.cf smtp/etc/postfix/main.cf
-lxc exec smtp -- bash -c "echo $FQDN > /etc/mailname
+lxc exec smtp -- bash -c "echo $FQDN_smtp > /etc/mailname
                           systemctl restart postfix
-                          echo Test SMTP $FQDN|mail -s 'Test SMTP $FQDN' $NEXTCLOUD_admin_email
+                          echo Test SMTP $FQDN_smtp|mail -s 'Test SMTP $FQDN_smtp' $NEXTCLOUD_admin_email
                           "
 
 ################################################################################
