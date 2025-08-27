@@ -278,15 +278,19 @@ echo "$($_ORANGE_)Create and network configuration for all containers$($_WHITE_)
 CT_LIST="smtp rvprx mariadb cloud collabora"
 
 for CT in $CT_LIST ; do
-    echo "$($_ORANGE_)Create ${CT}...$($_WHITE_)"
-    lxc copy z-template ${CT}
-    lxc start ${CT}
+    if lxc info "${CT}" >/dev/null 2>&1; then
+        echo "$($_ORANGE_)Container ${CT} already exists, reusing$($_WHITE_)"
+    else
+        echo "$($_ORANGE_)Create ${CT}...$($_WHITE_)"
+        lxc copy z-template "${CT}"
+        lxc start "${CT}"
+    fi
     IP_PUB="IP_${CT}"
     IP_PRIV="IP_${CT}_PRIV"
     sed -e "s/_IP_PUB_/${!IP_PUB}/" -e "s/_IP_PRIV_/${!IP_PRIV}/" -e "s/_CIDR_/$CIDR/" "$TMP_DIR/lxd_interfaces_TEMPLATE" > "$TMP_DIR/lxd_interfaces_${CT}"
     lxc file push "$TMP_DIR/lxd_interfaces_${CT}" ${CT}/etc/network/interfaces
     lxc file push "$TMP_DIR/lxd_resolv.conf" ${CT}/etc/resolv.conf
-    lxc restart $CT --force
+    lxc restart "${CT}" --force 2>/dev/null || lxc start "${CT}"
 done
 
 ################################################################################
