@@ -99,8 +99,6 @@ LXD_DEFAULT_STORAGE="$LXD_STORAGE_LOOP_BTRFS"
 
 ################################################################################
 
-# LXD Version (with snap)
-# see https://linuxcontainers.org/lxd/news/
-# 2.0 (11/04/2016) with a 5 years support commitment from upstream, ending on 1st of June 2021
-# 3.0 (02/04/2018) will be supported until June 2023
-LXD_VERSION="3.0"
+# LXD snap channel
+# see https://snapcraft.io/lxd for available channels
+LXD_SNAP_CHANNEL="latest/stable"
