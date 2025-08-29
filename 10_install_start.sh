@@ -266,7 +266,11 @@ fi
 DEBIAN_FRONTEND=noninteractive apt-get clean
 
 echo "$($_ORANGE_)Install: LXD with snap$($_WHITE_)"
-snap install lxd --channel="$LXD_SNAP_CHANNEL"
+if snap list | grep -q '^lxd\s'; then
+    echo "$($_ORANGE_)LXD snap already installed, skipping$($_WHITE_)"
+else
+    snap install lxd --channel="$LXD_SNAP_CHANNEL"
+fi
 
 ##### UBUNTU
 ## Install LXD package
