@@ -6,17 +6,17 @@ show_help() {
 Usage: $0 [OPTIONS]
 
 Options:
-  --all         Install all components
-  --nextcloud   Install Nextcloud container
-  --smtp        Install SMTP container
-  --rvprx       Install reverse proxy container
-  --mariadb     Install MariaDB container
-  --collabora   Install Collabora container
+  --all                     Install all components
+  --nextcloud               Install Nextcloud container
+  --smtp                    Install SMTP container
+  --rvprx                   Install reverse proxy container
+  --mariadb                 Install MariaDB container
+  --collabora               Install Collabora container
   --fqdn DOMAIN             Set Nextcloud FQDN
   --collabora-fqdn DOMAIN   Set Collabora FQDN
   --smtp-fqdn DOMAIN        Set SMTP FQDN
   --skip-dns-check         Skip FQDN DNS validation
-  -h, --help    Show this help
+  -h, --help                Show this help
 USAGE
 }
 

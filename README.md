@@ -43,7 +43,3 @@ Specify custom domain names when running the installer:
 
 Skip DNS validation when records are not yet configured:
 
-```
-./install.sh --nextcloud --skip-dns-check
-```
-
