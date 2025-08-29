@@ -232,12 +232,19 @@ enabled = true
 EOF
 systemctl enable --now fail2ban > /dev/null
 
-# Nat post 80 and 443 => RVPRX
-# Enable Masquerade and NAT rules
-echo "$($_ORANGE_)Install: iptables-persistent$($_WHITE_)"
-DEBIAN_FRONTEND=noninteractive apt-get -y install iptables-persistent > /dev/null
-echo "$($_ORANGE_)Enable Masquerade and NAT rules$($_WHITE_)"
-cat << EOF > /etc/iptables/rules.v4
+# Build list of port forward mappings
+IFS=' ' read -r -a _extra_forwards <<< "${PORT_FORWARDS:-}"
+_default_forwards=("${HTTP_PORT}:rvprx:${HTTP_PORT}" "${HTTPS_PORT}:rvprx:${HTTPS_PORT}")
+PORT_FORWARD_LIST=("${_default_forwards[@]}" "${_extra_forwards[@]}")
+
+if [ "${USE_LXD_PROXY}" = "1" ]; then
+    echo "$($_ORANGE_)Skipping iptables setup; will configure LXD proxy devices$($_WHITE_)"
+else
+    # Enable Masquerade and NAT rules
+    echo "$($_ORANGE_)Install: iptables-persistent$($_WHITE_)"
+    DEBIAN_FRONTEND=noninteractive apt-get -y install iptables-persistent > /dev/null
+    echo "$($_ORANGE_)Enable Masquerade and NAT rules$($_WHITE_)"
+    cat <<EOF > /etc/iptables/rules.v4
 ################################################################################
 ##########                          TABLE NAT                         ##########
 ################################################################################
@@ -247,13 +254,22 @@ cat << EOF > /etc/iptables/rules.v4
 # Custom chain for WAN prerouting
 :zone_wan_PREROUTING - [0:0]
 -A PREROUTING -i $INTERNET_ETH -j zone_wan_PREROUTING -m comment --comment "Internet Input PREROUTING"
-# NAT ${HTTP_PORT} > RVPRX (nginx)
--A zone_wan_PREROUTING -p tcp -m tcp --dport ${HTTP_PORT} -j DNAT --to-destination $IP_rvprx:${HTTP_PORT} -m comment --comment "Routing port ${HTTP_PORT} > RVPRX - TCP"
-# NAT ${HTTPS_PORT} > RVPRX (nginx)
--A zone_wan_PREROUTING -p tcp -m tcp --dport ${HTTPS_PORT} -j DNAT --to-destination $IP_rvprx:${HTTPS_PORT} -m comment --comment "Routing port ${HTTPS_PORT} > RVPRX - TCP"
+EOF
+    for _map in "${PORT_FORWARD_LIST[@]}"; do
+        IFS=':' read -r _host_port _ct _ct_port <<< "$_map"
+        _ct_port=${_ct_port:-$_host_port}
+        _var="IP_${_ct}"
+        _ct_ip=$(eval echo "\${$_var}")
+        if [ -n "$_ct_ip" ]; then
+            echo "# NAT ${_host_port} > ${_ct}" >> /etc/iptables/rules.v4
+            echo "-A zone_wan_PREROUTING -p tcp -m tcp --dport ${_host_port} -j DNAT --to-destination ${_ct_ip}:${_ct_port} -m comment --comment \"Routing port ${_host_port} > ${_ct} - TCP\"" >> /etc/iptables/rules.v4
+        fi
+    done
+    cat <<EOF >> /etc/iptables/rules.v4
 COMMIT
 EOF
-iptables-restore /etc/iptables/rules.v4
+    iptables-restore /etc/iptables/rules.v4
+fi
 
 ##### DEBIAN
 if [ "$LXD_STORAGE_DRIVER" = "zfs" ]; then
