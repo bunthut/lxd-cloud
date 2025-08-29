@@ -43,3 +43,15 @@ Specify custom domain names when running the installer:
 
 Skip DNS validation when records are not yet configured:
 
+```
+./install.sh --skip-dns-check
+```
+
+Use custom ports for the reverse proxy and Collabora:
+
+```
+./install.sh --all \
+    --http-port 8080 \
+    --https-port 8443 \
+    --collabora-port 9980
+```
