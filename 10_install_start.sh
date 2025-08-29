@@ -239,13 +239,13 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install iptables-persistent > /dev/nul
 echo "$($_ORANGE_)Enable Masquerade and NAT rules$($_WHITE_)"
 cat << EOF > /etc/iptables/rules.v4
 ################################################################################
-##########                          TABLE NAT                         ########## 
+##########                          TABLE NAT                         ##########
 ################################################################################
 *nat
 ####
 :PREROUTING ACCEPT [0:0]
-# Internet Input (PREROUTING)
--N zone_wan_PREROUTING
+# Custom chain for WAN prerouting
+:zone_wan_PREROUTING - [0:0]
 -A PREROUTING -i $INTERNET_ETH -j zone_wan_PREROUTING -m comment --comment "Internet Input PREROUTING"
 # NAT ${HTTP_PORT} > RVPRX (nginx)
 -A zone_wan_PREROUTING -p tcp -m tcp --dport ${HTTP_PORT} -j DNAT --to-destination $IP_rvprx:${HTTP_PORT} -m comment --comment "Routing port ${HTTP_PORT} > RVPRX - TCP"
