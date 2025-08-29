@@ -449,4 +449,18 @@ if has_component collabora; then
     ./containers/25_configure_collabora.sh
 fi
 
+if [ "${USE_LXD_PROXY}" = "1" ]; then
+    IFS=' ' read -r -a _extra_forwards <<< "${PORT_FORWARDS:-}"
+    _extra_forwards+=("${HTTP_PORT}:rvprx:${HTTP_PORT}" "${HTTPS_PORT}:rvprx:${HTTPS_PORT}")
+    for _map in "${_extra_forwards[@]}"; do
+        IFS=':' read -r _host_port _ct _ct_port <<< "$_map"
+        _ct_port=${_ct_port:-$_host_port}
+        _var="IP_${_ct}"
+        _ct_ip=$(eval echo "\${$_var}")
+        if lxc info "${_ct}" >/dev/null 2>&1; then
+            lxc config device add "${_ct}" "proxy${_host_port}" proxy listen="tcp:0.0.0.0:${_host_port}" connect="tcp:${_ct_ip}:${_ct_port}" >/dev/null 2>&1
+        fi
+    done
+fi
+
 ################################################################################
