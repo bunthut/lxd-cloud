@@ -43,6 +43,7 @@ Specify custom domain names when running the installer:
 
 Skip DNS validation when records are not yet configured:
 
+
 Forward additional host ports with the `--port-forward` flag. The format is
 `HOST_PORT:CONTAINER[:CONTAINER_PORT]`. For example, to expose SMTP on port 25
 and a custom service on port 8080:
@@ -56,4 +57,18 @@ and a custom service on port 8080:
 Ports 80 and 443 are automatically mapped to the `rvprx` container. Use
 `--use-lxd-proxy` if you prefer LXD proxy devices instead of iptables rules for
 the port forwarding.
+
+ =======
+```
+./install.sh --skip-dns-check
+```
+
+Use custom ports for the reverse proxy and Collabora:
+
+```
+./install.sh --all \
+    --http-port 8080 \
+    --https-port 8443 \
+    --collabora-port 9980
+```
 

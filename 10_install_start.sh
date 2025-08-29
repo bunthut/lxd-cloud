@@ -61,6 +61,18 @@ if [ -f config/00_VARS ]; then
         FQDN_smtp="$FQDN_SMTP_OVERRIDE"
         sed -i "s/^FQDN_smtp=.*/FQDN_smtp=\"$FQDN_smtp\"/" config/00_VARS
     fi
+    if [ -n "$HTTP_PORT_OVERRIDE" ]; then
+        HTTP_PORT="$HTTP_PORT_OVERRIDE"
+        sed -i "s/^HTTP_PORT=.*/HTTP_PORT=\"$HTTP_PORT\"/" config/00_VARS
+    fi
+    if [ -n "$HTTPS_PORT_OVERRIDE" ]; then
+        HTTPS_PORT="$HTTPS_PORT_OVERRIDE"
+        sed -i "s/^HTTPS_PORT=.*/HTTPS_PORT=\"$HTTPS_PORT\"/" config/00_VARS
+    fi
+    if [ -n "$COLLABORA_PORT_OVERRIDE" ]; then
+        COLLABORA_PORT="$COLLABORA_PORT_OVERRIDE"
+        sed -i "s/^COLLABORA_PORT=.*/COLLABORA_PORT=\"$COLLABORA_PORT\"/" config/00_VARS
+    fi
 else
     echo ""
     echo "$($_RED_)File « config/00_VARS » don't exist$($_WHITE_)"
@@ -72,6 +84,9 @@ else
     FQDN=${FQDN_OVERRIDE:-$FQDN}
     FQDN_collabora=${FQDN_COLLABORA_OVERRIDE:-$FQDN_collabora}
     FQDN_smtp=${FQDN_SMTP_OVERRIDE:-$FQDN_smtp}
+    HTTP_PORT=${HTTP_PORT_OVERRIDE:-$HTTP_PORT}
+    HTTPS_PORT=${HTTPS_PORT_OVERRIDE:-$HTTPS_PORT}
+    COLLABORA_PORT=${COLLABORA_PORT_OVERRIDE:-$COLLABORA_PORT}
     read -p "$($_GREEN_)Internet network interface [$INTERNET_ETH]:$($_WHITE_) " input; INTERNET_ETH=${input:-$INTERNET_ETH}
     read -p "$($_GREEN_)FQDN [$FQDN]:$($_WHITE_) " input; FQDN=${input:-$FQDN}
     read -p "$($_GREEN_)Collabora FQDN [$FQDN_collabora]:$($_WHITE_) " input; FQDN_collabora=${input:-$FQDN_collabora}
@@ -282,7 +297,11 @@ fi
 DEBIAN_FRONTEND=noninteractive apt-get clean
 
 echo "$($_ORANGE_)Install: LXD with snap$($_WHITE_)"
-snap install lxd --channel="$LXD_SNAP_CHANNEL"
+if snap list | grep -q '^lxd\s'; then
+    echo "$($_ORANGE_)LXD snap already installed, skipping$($_WHITE_)"
+else
+    snap install lxd --channel="$LXD_SNAP_CHANNEL"
+fi
 
 ##### UBUNTU
 ## Install LXD package

@@ -102,11 +102,10 @@ fi
 
 # LXD INIT
 echo "$($_ORANGE_)LXD initialization$($_WHITE_)"
-
-# Test if LXD_INIT=true (see config/03_OTHER_VARS to edit)
-if ! $LXD_INIT; then
-    echo "$($_ORANGE_)You have choose to not configure lxd$($_WHITE_)"
-else
+# Skip re-initialization when LXD is already configured
+if lxc profile list >/dev/null 2>&1; then
+    echo "$($_ORANGE_)LXD already initialized, using existing configuration$($_WHITE_)"
+elif $LXD_INIT; then
     # Initializing of lxd
     cat << EOF | lxd init --preseed
 # Daemon settings
@@ -200,6 +199,8 @@ profiles:
   config:
     limits.memory: 4GB
 EOF
+else
+    echo "$($_ORANGE_)You have choose to not configure lxd$($_WHITE_)"
 fi
 
 # Ensure required LXD profiles exist
@@ -254,6 +255,16 @@ for profile in $(printf '%s\n' "${REQUIRED_PROFILES[@]}" | sort -u); do
         fi
     fi
 done
+
+NEED_TEMPLATE=false
+for CT in $CT_LIST; do
+    if ! lxc info "$CT" >/dev/null 2>&1; then
+        NEED_TEMPLATE=true
+        break
+    fi
+done
+
+if $NEED_TEMPLATE; then
 
 # TEMPLATE interfaces containers
 cat << EOF > "$TMP_DIR/lxd_interfaces_TEMPLATE"
@@ -354,6 +365,10 @@ for CT in $CT_LIST ; do
     lxc file push "$TMP_DIR/lxd_resolv.conf" ${CT}/etc/resolv.conf
     lxc restart "${CT}" --force 2>/dev/null || lxc start "${CT}"
 done
+
+else
+    echo "$($_ORANGE_)All selected containers already exist, skipping creation$($_WHITE_)"
+fi
 
 ################################################################################
 
