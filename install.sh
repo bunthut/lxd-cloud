@@ -6,16 +6,17 @@ show_help() {
 Usage: $0 [OPTIONS]
 
 Options:
-  --all         Install all components
-  --nextcloud   Install Nextcloud container
-  --smtp        Install SMTP container
-  --rvprx       Install reverse proxy container
-  --mariadb     Install MariaDB container
-  --collabora   Install Collabora container
+  --all                     Install all components
+  --nextcloud               Install Nextcloud container
+  --smtp                    Install SMTP container
+  --rvprx                   Install reverse proxy container
+  --mariadb                 Install MariaDB container
+  --collabora               Install Collabora container
   --fqdn DOMAIN             Set Nextcloud FQDN
   --collabora-fqdn DOMAIN   Set Collabora FQDN
   --smtp-fqdn DOMAIN        Set SMTP FQDN
-  -h, --help    Show this help
+  --skip-dns-check         Skip FQDN DNS validation
+  -h, --help                Show this help
 USAGE
 }
 
@@ -59,6 +60,10 @@ while [[ $# -gt 0 ]]; do
             FQDN_SMTP_OVERRIDE="$2"
             shift 2
             ;;
+        --skip-dns-check)
+            SKIP_DNS_CHECK=1
+            shift
+            ;;
         -h|--help)
             show_help
             exit 0
@@ -84,7 +89,7 @@ fi
 mapfile -t components < <(printf '%s\n' "${components[@]}" | sort -u)
 
 # Run base installation script once
-export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE
+export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE SKIP_DNS_CHECK
 ./10_install_start.sh
 
 # Pass component list to next script

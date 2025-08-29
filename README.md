@@ -41,3 +41,5 @@ Specify custom domain names when running the installer:
     --smtp-fqdn smtp.example.com
 ```
 
+Skip DNS validation when records are not yet configured:
+
