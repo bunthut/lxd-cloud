@@ -47,6 +47,20 @@ _ORANGE_="tput setaf 3"
 # If vars file exist, source
 if [ -f config/00_VARS ]; then
     source config/00_VARS
+
+    # Override domains from environment variables when provided
+    if [ -n "$FQDN_OVERRIDE" ]; then
+        FQDN="$FQDN_OVERRIDE"
+        sed -i "s/^FQDN=.*/FQDN=\"$FQDN\"/" config/00_VARS
+    fi
+    if [ -n "$FQDN_COLLABORA_OVERRIDE" ]; then
+        FQDN_collabora="$FQDN_COLLABORA_OVERRIDE"
+        sed -i "s/^FQDN_collabora=.*/FQDN_collabora=\"$FQDN_collabora\"/" config/00_VARS
+    fi
+    if [ -n "$FQDN_SMTP_OVERRIDE" ]; then
+        FQDN_smtp="$FQDN_SMTP_OVERRIDE"
+        sed -i "s/^FQDN_smtp=.*/FQDN_smtp=\"$FQDN_smtp\"/" config/00_VARS
+    fi
 else
     echo ""
     echo "$($_RED_)File « config/00_VARS » don't exist$($_WHITE_)"
@@ -55,6 +69,9 @@ else
     echo ""
     echo "$($_ORANGE_)** TECHNICAL **$($_WHITE_)"
     echo ""
+    FQDN=${FQDN_OVERRIDE:-$FQDN}
+    FQDN_collabora=${FQDN_COLLABORA_OVERRIDE:-$FQDN_collabora}
+    FQDN_smtp=${FQDN_SMTP_OVERRIDE:-$FQDN_smtp}
     read -p "$($_GREEN_)Internet network interface [$INTERNET_ETH]:$($_WHITE_) " input; INTERNET_ETH=${input:-$INTERNET_ETH}
     read -p "$($_GREEN_)FQDN [$FQDN]:$($_WHITE_) " input; FQDN=${input:-$FQDN}
     read -p "$($_GREEN_)Collabora FQDN [$FQDN_collabora]:$($_WHITE_) " input; FQDN_collabora=${input:-$FQDN_collabora}
@@ -164,19 +181,23 @@ EOF
 
 #############
 
-echo "$($_ORANGE_)Test if FQDN records A and PTR is OK$($_WHITE_)"
-TEST_IP=$(host -t A $FQDN|awk '{print $4}')
-TEST_FQDN=$(host -t PTR $TEST_IP|awk '{print $5}')
-# Remove « . » in end on PTR record
-if [ "${TEST_FQDN::-1}" != "$FQDN" ] ; then
-    echo "$($_RED_)"
-    echo "ERROR DNS RECORDS"
-    echo "Your FQDN « $FQDN » is not equal to PTR value: « $TEST_FQDN »"
-    echo "Please fix that and retry"
-    echo "$($_WHITE_)"
-    exit 1
+if [ -n "$SKIP_DNS_CHECK" ]; then
+    echo "$($_ORANGE_)Skipping DNS record validation$($_WHITE_)"
 else
-    echo "$($_GREEN_)FQDN records A and PTR is OK$($_WHITE_)"
+    echo "$($_ORANGE_)Test if FQDN records A and PTR is OK$($_WHITE_)"
+    TEST_IP=$(host -t A $FQDN|awk '{print $4}')
+    TEST_FQDN=$(host -t PTR $TEST_IP|awk '{print $5}')
+    # Remove « . » in end on PTR record
+    if [ "${TEST_FQDN::-1}" != "$FQDN" ] ; then
+        echo "$($_RED_)"
+        echo "ERROR DNS RECORDS"
+        echo "Your FQDN « $FQDN » is not equal to PTR value: « $TEST_FQDN »"
+        echo "Please fix that and retry"
+        echo "$($_WHITE_)"
+        exit 1
+    else
+        echo "$($_GREEN_)FQDN records A and PTR is OK$($_WHITE_)"
+    fi
 fi
 
 #############

@@ -32,3 +32,18 @@ Install only specific components by combining flags:
 
 Run `./install.sh --help` to see all available options.
 
+Specify custom domain names when running the installer:
+
+```
+./install.sh --nextcloud \
+    --fqdn cloud.example.com \
+    --collabora-fqdn office.example.com \
+    --smtp-fqdn smtp.example.com
+```
+
+Skip DNS validation when records are not yet configured:
+
+```
+./install.sh --nextcloud --skip-dns-check
+```
+
