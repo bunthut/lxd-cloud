@@ -15,6 +15,9 @@ Options:
   --fqdn DOMAIN             Set Nextcloud FQDN
   --collabora-fqdn DOMAIN   Set Collabora FQDN
   --smtp-fqdn DOMAIN        Set SMTP FQDN
+  --http-port PORT          Set HTTP port
+  --https-port PORT         Set HTTPS port
+  --collabora-port PORT     Set Collabora port
   --skip-dns-check         Skip FQDN DNS validation
   -h, --help                Show this help
 USAGE
@@ -60,6 +63,18 @@ while [[ $# -gt 0 ]]; do
             FQDN_SMTP_OVERRIDE="$2"
             shift 2
             ;;
+        --http-port)
+            HTTP_PORT_OVERRIDE="$2"
+            shift 2
+            ;;
+        --https-port)
+            HTTPS_PORT_OVERRIDE="$2"
+            shift 2
+            ;;
+        --collabora-port)
+            COLLABORA_PORT_OVERRIDE="$2"
+            shift 2
+            ;;
         --skip-dns-check)
             SKIP_DNS_CHECK=1
             shift
@@ -89,7 +104,9 @@ fi
 mapfile -t components < <(printf '%s\n' "${components[@]}" | sort -u)
 
 # Run base installation script once
-export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE SKIP_DNS_CHECK
+export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE \
+       HTTP_PORT_OVERRIDE HTTPS_PORT_OVERRIDE COLLABORA_PORT_OVERRIDE \
+       SKIP_DNS_CHECK
 ./10_install_start.sh
 
 # Pass component list to next script
