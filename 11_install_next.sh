@@ -221,7 +221,7 @@ if has_component smtp; then
     REQUIRED_PROFILES+=("$LXC_PROFILE_smtp_CPU" "$LXC_PROFILE_smtp_MEM")
 fi
 
-# Create CPU or memory limit profiles when missing
+# Create CPU, memory limit or special network profiles when missing
 create_profile() {
     local prof="$1"
     case "$prof" in
@@ -241,6 +241,15 @@ create_profile() {
             lxc profile show "$prof" >/dev/null 2>&1 || \
                 lxc profile create "$prof" >/dev/null 2>&1 || return 1
             lxc profile set "$prof" limits.memory "$mem" >/dev/null 2>&1 || return 1
+            ;;
+        privNet)
+            # Network profile for backend bridge
+            lxc profile show "$prof" >/dev/null 2>&1 || {
+                lxc profile create "$prof" >/dev/null 2>&1 || return 1
+            }
+            # Ensure nic device exists
+            lxc profile device show "$prof" ethPrivate >/dev/null 2>&1 || \
+                lxc profile device add "$prof" ethPrivate nic nictype=bridged parent=lxdbrINT name=ethPrivate >/dev/null 2>&1 || return 1
             ;;
         *)
             return 1

@@ -72,3 +72,16 @@ Use custom ports for the reverse proxy and Collabora:
     --collabora-port 9980
 ```
 
+## Manually create the `privNet` profile
+
+The installer normally creates a `privNet` profile for the internal network. If
+needed, you can create it yourself with:
+
+```
+lxc profile create privNet
+lxc profile device add privNet ethPrivate nic nictype=bridged parent=lxdbrINT name=ethPrivate
+```
+
+This profile connects the container interface `ethPrivate` to the bridge
+`lxdbrINT` for backend communication.
+
