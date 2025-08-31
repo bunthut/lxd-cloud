@@ -93,18 +93,7 @@ lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
     sudo            \
     apache2         \
     mariadb-client  \
-    redis-server    \
-# LXD Version (with snap)
-# see https://linuxcontainers.org/lxd/news/
-# 2.0 (11/04/2016) with a 5 years support commitment from upstream, ending on 1st of June 2021
-# 3.0 (02/04/2018) will be supported until June 2023
-LXD_VERSION="5.0/stable"
-
-# LXD snap channel
-# see https://snapcraft.io/lxd for available channels
-LXD_SNAP_CHANNEL="latest/stable"
-
-
+    redis-server" ;
 
 echo "$($_ORANGE_)apache2 FIX ServerName$($_WHITE_)"
 lxc exec cloud -- bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
