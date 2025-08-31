@@ -134,7 +134,6 @@ LXD_VERSION="5.0/stable"
 LXD_SNAP_CHANNEL="latest/stable"
 
 
-
 echo "$($_ORANGE_)apache2 FIX ServerName$($_WHITE_)"
 lxc_exec bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
                            a2enconf 99_ServerName > /dev/null"
