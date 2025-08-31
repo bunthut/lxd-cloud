@@ -121,5 +121,10 @@ export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE \
 
 ./10_install_start.sh
 
+# Only continue if the first stage didn't request a logout (user already in lxd group)
+if ! id -nG "$USER" | grep -qw lxd; then
+    exit 0
+fi
+
 # Pass component list to next script
 ./11_install_next.sh "${components[@]}"
