@@ -221,14 +221,14 @@ if has_component smtp; then
     REQUIRED_PROFILES+=("$LXC_PROFILE_smtp_CPU" "$LXC_PROFILE_smtp_MEM")
 fi
 
-PROFILE_LIST="$(lxc profile list -c n --format csv 2>/dev/null)"
 # Create CPU or memory limit profiles when missing
 create_profile() {
     local prof="$1"
     case "$prof" in
         cpu-*)
             local cpu="${prof#cpu-}"
-            lxc profile create "$prof" >/dev/null 2>&1 || return 1
+            lxc profile show "$prof" >/dev/null 2>&1 || \
+                lxc profile create "$prof" >/dev/null 2>&1 || return 1
             lxc profile set "$prof" limits.cpu "$cpu" >/dev/null 2>&1 || return 1
             ;;
         ram-*)
@@ -238,7 +238,8 @@ create_profile() {
             else
                 mem="${mem}MB"
             fi
-            lxc profile create "$prof" >/dev/null 2>&1 || return 1
+            lxc profile show "$prof" >/dev/null 2>&1 || \
+                lxc profile create "$prof" >/dev/null 2>&1 || return 1
             lxc profile set "$prof" limits.memory "$mem" >/dev/null 2>&1 || return 1
             ;;
         *)
@@ -248,7 +249,7 @@ create_profile() {
 }
 
 for profile in $(printf '%s\n' "${REQUIRED_PROFILES[@]}" | sort -u); do
-    if ! grep -qx "$profile" <<< "$PROFILE_LIST"; then
+    if ! lxc profile show "$profile" >/dev/null 2>&1; then
         if ! create_profile "$profile"; then
             echo "$($_RED_)LXD profile '$profile' is missing. Please fix LXD initialization before running this script.$($_WHITE_)"
             exit 1
