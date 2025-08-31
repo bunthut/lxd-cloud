@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # BSD 3-Clause License
 # 
@@ -62,6 +63,13 @@ source $GIT_PATH/config/03_OTHER_VARS
 
 ################################################################################
 
+lxc_exec() {
+    if ! lxc exec cloud -- "$@"; then
+        echo "$($_RED_)Failed: lxc exec cloud -- $*$($_WHITE_)" >&2
+        exit 1
+    fi
+}
+
 #### CLOUD
 
 # Test if Nextcloud database password is set
@@ -71,10 +79,30 @@ if [ ! -f /tmp/lxc_nextcloud_password ] ; then
 fi
 MDP_nextcoud="$(cat /tmp/lxc_nextcloud_password)"
 
+# Ensure cloud container exists and is running
+if ! lxc info cloud --state >/dev/null 2>&1; then
+    echo "$($_RED_)Cloud container not found$($_WHITE_)"
+    exit 1
+fi
+
+CLOUD_STATE=$(lxc info cloud --state 2>/dev/null | awk -F': ' '/Status:/ {print $2}')
+if [ "$CLOUD_STATE" != "Running" ]; then
+    echo "$($_ORANGE_)Starting cloud container$($_WHITE_)"
+    if ! lxc start cloud; then
+        echo "$($_RED_)Unable to start cloud container$($_WHITE_)"
+        exit 1
+    fi
+    CLOUD_STATE=$(lxc info cloud --state 2>/dev/null | awk -F': ' '/Status:/ {print $2}')
+    if [ "$CLOUD_STATE" != "Running" ]; then
+        echo "$($_RED_)Cloud container is not running$($_WHITE_)"
+        exit 1
+    fi
+fi
+
 echo "$($_GREEN_)BEGIN cloud$($_WHITE_)"
 
 echo "$($_ORANGE_)Create symlinks for /etc/nginx and /etc/letsencrypt to /srv/lxd$($_WHITE_)"
-lxc exec cloud -- ln -s /srv/lxd/var/www/ /var/
+lxc_exec ln -s /srv/lxd/var/www/ /var/
 
 echo "$($_ORANGE_)Create and attach data cloud ($NEXTCLOUD_DATA_DIR) directory$($_WHITE_)"
 mkdir -p $NEXTCLOUD_DATA_DIR
@@ -82,18 +110,19 @@ chown 1000033:1000033 $NEXTCLOUD_DATA_DIR
 lxc config device add cloud DataCloud disk path=$NEXTCLOUD_DATA_DIR source=$NEXTCLOUD_DATA_DIR
 
 echo "$($_ORANGE_)Create « occ » alias command$($_WHITE_)"
-lxc exec cloud -- bash -c 'echo "sudo -u www-data php /var/www/nextcloud/occ \$@" > /usr/local/bin/occ
+lxc_exec bash -c 'echo "sudo -u www-data php /var/www/nextcloud/occ \$@" > /usr/local/bin/occ
                            chmod +x /usr/local/bin/occ
                            '
 
 echo "$($_ORANGE_)Install packages for nextcloud...$($_WHITE_)"
-lxc exec cloud -- bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
+lxc_exec bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y install \
     wget            \
     curl            \
     sudo            \
     apache2         \
     mariadb-client  \
     redis-server    \
+"
 # LXD Version (with snap)
 # see https://linuxcontainers.org/lxd/news/
 # 2.0 (11/04/2016) with a 5 years support commitment from upstream, ending on 1st of June 2021
@@ -107,18 +136,18 @@ LXD_SNAP_CHANNEL="latest/stable"
 
 
 echo "$($_ORANGE_)apache2 FIX ServerName$($_WHITE_)"
-lxc exec cloud -- bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
+lxc_exec bash -c "echo 'ServerName $FQDN' > /etc/apache2/conf-available/99_ServerName.conf
                            a2enconf 99_ServerName > /dev/null"
 echo "$($_ORANGE_)Enable php-fpm in apache2$($_WHITE_)"
-lxc exec cloud -- bash -c "a2enmod proxy_fcgi setenvif > /dev/null
+lxc_exec bash -c "a2enmod proxy_fcgi setenvif > /dev/null
                            a2enconf php8.2-fpm > /dev/null"
 
 echo "$($_ORANGE_)Enable apache2 mods$($_WHITE_)"
-lxc exec cloud -- bash -c "a2enmod rewrite > /dev/null
+lxc_exec bash -c "a2enmod rewrite > /dev/null
                            a2enmod headers env dir mime remoteip > /dev/null"
 
 echo "$($_ORANGE_)Tuning opcache (php) conf$($_WHITE_)"
-lxc exec cloud -- bash -c "sed -i                                                                              \
+lxc_exec bash -c "sed -i                                                                              \
     -e 's/;opcache.enable=0/opcache.enable=1/'                                      \
     -e 's/;opcache.enable_cli=0/opcache.enable_cli=1/'                              \
     -e 's/;opcache.interned_strings_buffer=4/opcache.interned_strings_buffer=8/'    \
@@ -130,18 +159,18 @@ lxc exec cloud -- bash -c "sed -i                                               
 
 
 echo "$($_ORANGE_)Restart FPM$($_WHITE_)"
-lxc exec cloud -- bash -c "systemctl restart php8.2-fpm.service"
+lxc_exec bash -c "systemctl restart php8.2-fpm.service"
 
 echo "$($_ORANGE_)Restart apache2$($_WHITE_)"
-lxc exec cloud -- bash -c "systemctl restart apache2.service"
+lxc_exec bash -c "systemctl restart apache2.service"
 
 echo "$($_ORANGE_)Test Apache + PHP with FPM$($_WHITE_)"
-lxc exec cloud -- bash -c "cat << EOF > /var/www/html/phpinfo.php
+lxc_exec bash -c "cat << EOF > /var/www/html/phpinfo.php
 <?php
 phpinfo();
 EOF"
 
-lxc exec cloud -- bash -c 'if curl -s 127.0.0.1/phpinfo.php|grep -q php-fpm; then
+lxc_exec bash -c 'if curl -s 127.0.0.1/phpinfo.php|grep -q php-fpm; then
     echo -e "\n\033[32m ** FPM OK **\033[00m\n"
 else
     >&2 echo -e "\033[31m==================== ERROR  ====================\033[00m"
@@ -149,25 +178,25 @@ else
     exit 1
 fi'
 
-lxc exec cloud -- bash -c "rm -f /var/www/html/phpinfo.php"
+lxc_exec bash -c "rm -f /var/www/html/phpinfo.php"
 
 echo "$($_ORANGE_)apache2 listen only in Private IP$($_WHITE_)"
-lxc exec cloud -- bash -c "echo 'Listen $IP_cloud_PRIV:80' > /etc/apache2/ports.conf"
+lxc_exec bash -c "echo 'Listen $IP_cloud_PRIV:80' > /etc/apache2/ports.conf"
 
 echo "$($_ORANGE_)Download and uncompress Nextcloud$($_WHITE_)"
-lxc exec cloud -- bash -c "wget -q $NEXTCLOUD_URL -O /tmp/nextcloud.tar.bz2"
-lxc exec cloud -- bash -c "tar xaf /tmp/nextcloud.tar.bz2 -C /var/www/"
-lxc exec cloud -- bash -c "rm -f /tmp/nextcloud.tar.bz2"
+lxc_exec bash -c "wget -q $NEXTCLOUD_URL -O /tmp/nextcloud.tar.bz2"
+lxc_exec bash -c "tar xaf /tmp/nextcloud.tar.bz2 -C /var/www/"
+lxc_exec bash -c "rm -f /tmp/nextcloud.tar.bz2"
 
 echo "$($_ORANGE_)Update directory privileges$($_WHITE_)"
-lxc exec cloud -- bash -c "
+lxc_exec bash -c "
     chown -R www-data:www-data /var/www/nextcloud/
     mkdir -p /var/log/nextcloud
     chown -R www-data:www-data /var/log/nextcloud
     "
 
 echo "$($_ORANGE_)Create Vhost apache for Nextcloud$($_WHITE_)"
-lxc exec cloud -- bash -c 'cat << "EOF" > /etc/apache2/sites-available/nextcloud.conf
+lxc_exec bash -c 'cat << "EOF" > /etc/apache2/sites-available/nextcloud.conf
 <VirtualHost *:80>
     ServerName __FQDN__
 
@@ -200,34 +229,34 @@ lxc exec cloud -- bash -c 'cat << "EOF" > /etc/apache2/sites-available/nextcloud
 EOF'
 
 echo "$($_ORANGE_)Update FQDN$($_WHITE_)"
-lxc exec cloud -- bash -c "sed -i -e 's/__FQDN__/$FQDN/' -e 's/__MAIL_ADMIN__/$TECH_ADMIN_EMAIL/' /etc/apache2/sites-available/nextcloud.conf"
+lxc_exec bash -c "sed -i -e 's/__FQDN__/$FQDN/' -e 's/__MAIL_ADMIN__/$TECH_ADMIN_EMAIL/' /etc/apache2/sites-available/nextcloud.conf"
 
 echo "$($_ORANGE_)Disable Default Vhost and enable nextcloud$($_WHITE_)"
-lxc exec cloud -- bash -c "a2dissite 000-default > /dev/null
+lxc_exec bash -c "a2dissite 000-default > /dev/null
                            a2ensite nextcloud.conf > /dev/null"
 
 echo "$($_ORANGE_)apache2 configtest$($_WHITE_)"
-lxc exec cloud -- bash -c "apache2ctl configtest"
+lxc_exec bash -c "apache2ctl configtest"
 
 echo "$($_ORANGE_)Reload apache2$($_WHITE_)"
-lxc exec cloud -- bash -c "systemctl reload apache2"
+lxc_exec bash -c "systemctl reload apache2"
 
 echo "$($_ORANGE_)Nextcloud installation$($_WHITE_)"
 if lxc exec cloud -- bash -c '[ -f /var/www/nextcloud/config/config.php ] || occ status >/dev/null 2>&1'; then
     echo "$($_GREEN_)Existing Nextcloud installation detected - reusing instance$($_WHITE_)"
 else
-    lxc exec cloud -- bash -c "occ maintenance:install --database 'mysql' --database-host '$IP_mariadb_PRIV' --database-name 'nextcloud'  --database-user 'nextcloud' --database-pass '$MDP_nextcoud' --admin-user '$NEXTCLOUD_admin_user' --admin-pass '$NEXTCLOUD_admin_password' --data-dir='$NEXTCLOUD_DATA_DIR'"
+    lxc_exec bash -c "occ maintenance:install --database 'mysql' --database-host '$IP_mariadb_PRIV' --database-name 'nextcloud'  --database-user 'nextcloud' --database-pass '$MDP_nextcoud' --admin-user '$NEXTCLOUD_admin_user' --admin-pass '$NEXTCLOUD_admin_password' --data-dir='$NEXTCLOUD_DATA_DIR'"
 fi
 
 echo "$($_ORANGE_)Tune MAX upload file size$($_WHITE_)"
-lxc exec cloud -- bash -c "sed -i \
+lxc_exec bash -c "sed -i \
                              -e 's/upload_max_filesize=.*/upload_max_filesize=$MAX_UPLOAD_FILE_SIZE/' \
                              -e 's/post_max_size=.*/post_max_size=$MAX_UPLOAD_FILE_SIZE/' \
                              /var/www/nextcloud/.user.ini
                            "
 
 echo "$($_ORANGE_)Tune Nextcloud conf$($_WHITE_)"
-lxc exec cloud -- bash -c "occ config:system:set trusted_domains 0    --value='$FQDN'
+lxc_exec bash -c "occ config:system:set trusted_domains 0    --value='$FQDN'
                            occ config:system:set overwrite.cli.url    --value='$FQDN'
                            occ config:system:set htaccess.RewriteBase --value='/'
                            # Language and time zone settings
@@ -248,10 +277,10 @@ lxc exec cloud -- bash -c "occ config:system:set trusted_domains 0    --value='$
                            "
 
 echo "$($_ORANGE_)Update .htaccess$($_WHITE_)"
-lxc exec cloud -- bash -c "occ maintenance:update:htaccess > /dev/null"
+lxc_exec bash -c "occ maintenance:update:htaccess > /dev/null"
 
 echo "$($_ORANGE_)Install applications in Nextcloud$($_WHITE_)"
-lxc exec cloud -- bash -c "
+lxc_exec bash -c "
     occ app:install calendar
     occ app:enable  calendar
     occ app:enable  admin_audit
@@ -276,18 +305,18 @@ lxc exec cloud -- bash -c "
 "
 
 echo "$($_ORANGE_)Enable admin_approval_required for registration app$($_WHITE_)"
-lxc exec cloud -- bash -c "
+lxc_exec bash -c "
     occ config:app:set registration admin_approval_required --value='yes'
 "
 
 echo "$($_ORANGE_)Enable quota warning notification$($_WHITE_)"
-lxc exec cloud -- bash -c "occ config:app:set quota_warning info_email    --value='yes'
+lxc_exec bash -c "occ config:app:set quota_warning info_email    --value='yes'
                            occ config:app:set quota_warning warning_email --value='yes'
                            occ config:app:set quota_warning alert_email   --value='yes'
                            "
 
 echo "$($_ORANGE_)Configure SMTP in Nextcloud$($_WHITE_)"
-lxc exec cloud -- bash -c "occ config:system:set mail_smtpmode --value='smtp'
+lxc_exec bash -c "occ config:system:set mail_smtpmode --value='smtp'
                            occ config:system:set mail_smtpauthtype --value='LOGIN'
                            occ config:system:set mail_from_address --value='cloud'
                            occ config:system:set mail_domain --value='$FQDN'
@@ -296,13 +325,13 @@ lxc exec cloud -- bash -c "occ config:system:set mail_smtpmode --value='smtp'
                            "
 
 echo "$($_ORANGE_)Set Collabora Online trusted domain$($_WHITE_)"
-lxc exec cloud -- bash -c "occ config:app:set richdocuments wopi_url --value='https://$FQDN_collabora'"
+lxc_exec bash -c "occ config:app:set richdocuments wopi_url --value='https://$FQDN_collabora'"
 
 echo "$($_ORANGE_)Set email in Nextcloud admin account$($_WHITE_)"
-lxc exec cloud -- bash -c "occ user:setting $NEXTCLOUD_admin_user settings email '$NEXTCLOUD_admin_email'"
+lxc_exec bash -c "occ user:setting $NEXTCLOUD_admin_user settings email '$NEXTCLOUD_admin_email'"
 
 echo "$($_ORANGE_)Set transparency client ip for Nextcloud and Apache$($_WHITE_)"
-lxc exec cloud -- bash -c "
+lxc_exec bash -c "
                            occ config:system:set trusted_proxies 0 --value='$IP_rvprx_PRIV'
                            occ config:system:set forwarded_for_headers 0 --value='HTTP_X_FORWARDED_FOR'
                            cat << EOF > /etc/apache2/mods-available/remoteip.conf
@@ -324,7 +353,7 @@ EOF
 #"
 
 echo "$($_ORANGE_)Clean package cache (.deb files)$($_WHITE_)"
-lxc exec cloud -- bash -c "apt-get clean"
+lxc_exec bash -c "apt-get clean"
 
 echo "$($_ORANGE_)Reboot container to free memory$($_WHITE_)"
 lxc restart cloud --force
