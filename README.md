@@ -17,10 +17,17 @@ Please see :
 
 ## Installation
 
-Use the `install.sh` helper to run the various setup steps. Run all components:
+The installation now runs in two stages. Invoke `install.sh` with your desired
+components. The first run prepares the host and installs LXD, then asks you to
+log out so the `lxd` group membership can take effect. After logging back in,
+re-run the same command to deploy the selected containers.
+
+Run all components:
 
 ```
-./install.sh --all
+./install.sh --all   # first run
+# log out and log back in
+./install.sh --all   # second run to finish
 ```
 
 Install only specific components by combining flags:

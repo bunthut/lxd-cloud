@@ -320,8 +320,12 @@ fi
 
 echo "$($_GREEN_)LXD is installed$($_WHITE_)"
 echo ""
-echo "$($_RED_)Please logout/login in bash to prevent snap bug and start script :$($_WHITE_)"
-echo "$($_GREEN_)11_install_next.sh$($_WHITE_)"
+
+if ! id -nG "$USER" | grep -qw lxd; then
+    echo "$($_RED_)Please logout/login in bash to prevent snap bug and start script :$($_WHITE_)"
+    echo "$($_GREEN_)11_install_next.sh$($_WHITE_)"
+    exit 0
+fi
 
 # Test if /run/reboot-required file exist, and print warning
 if [ -f /run/reboot-required ] ; then
