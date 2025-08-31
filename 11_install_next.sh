@@ -392,7 +392,11 @@ if has_component rvprx; then
     mkdir -p \
         $LXD_DEPORTED_DIR/rvprx/etc/nginx        \
         $LXD_DEPORTED_DIR/rvprx/etc/letsencrypt
-    lxc config device add rvprx shared-rvprx disk path=/srv/lxd source=$LXD_DEPORTED_DIR/rvprx/
+    if ! lxc config device show rvprx | grep -q '^shared-rvprx:'; then
+        lxc config device add rvprx shared-rvprx disk path=/srv/lxd source=$LXD_DEPORTED_DIR/rvprx/
+    else
+        echo "Device shared-rvprx already exists on rvprx, skipping"
+    fi
 fi
 
 if has_component cloud; then
@@ -400,7 +404,11 @@ if has_component cloud; then
     ## - Nextcloud html directory
     mkdir -p \
         $LXD_DEPORTED_DIR/cloud/var/www
-    lxc config device add cloud shared-cloud disk path=/srv/lxd source=$LXD_DEPORTED_DIR/cloud/
+    if ! lxc config device show cloud | grep -q '^shared-cloud:'; then
+        lxc config device add cloud shared-cloud disk path=/srv/lxd source=$LXD_DEPORTED_DIR/cloud/
+    else
+        echo "Device shared-cloud already exists on cloud, skipping"
+    fi
 fi
 
 if has_component mariadb; then
@@ -408,7 +416,11 @@ if has_component mariadb; then
     ## - Tempory directory for MySQL dump
     mkdir -p \
         $LXD_DEPORTED_DIR/mariadb
-    lxc config device add mariadb shared-mariadb disk path=/srv/lxd source=$LXD_DEPORTED_DIR/mariadb
+    if ! lxc config device show mariadb | grep -q '^shared-mariadb:'; then
+        lxc config device add mariadb shared-mariadb disk path=/srv/lxd source=$LXD_DEPORTED_DIR/mariadb
+    else
+        echo "Device shared-mariadb already exists on mariadb, skipping"
+    fi
 fi
 
 # Set mapped UID and GID to LXD deported directory
