@@ -122,7 +122,8 @@ export FQDN_OVERRIDE FQDN_COLLABORA_OVERRIDE FQDN_SMTP_OVERRIDE \
 ./10_install_start.sh
 
 # Only continue if the first stage didn't request a logout (user already in lxd group)
-if ! id -nG "$USER" | grep -qw lxd; then
+# Skip this check when running as root, which already has LXD access
+if [ "$EUID" -ne 0 ] && ! id -nG "$USER" | grep -qw lxd; then
     exit 0
 fi
 

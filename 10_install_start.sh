@@ -321,7 +321,8 @@ fi
 echo "$($_GREEN_)LXD is installed$($_WHITE_)"
 echo ""
 
-if ! id -nG "$USER" | grep -qw lxd; then
+# Non-root users must log out if not yet in the lxd group
+if [ "$EUID" -ne 0 ] && ! id -nG "$USER" | grep -qw lxd; then
     echo "$($_RED_)Please logout/login in bash to prevent snap bug and start script :$($_WHITE_)"
     echo "$($_GREEN_)11_install_next.sh$($_WHITE_)"
     exit 0
