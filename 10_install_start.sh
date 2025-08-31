@@ -255,6 +255,10 @@ PORT_FORWARD_LIST=("${_default_forwards[@]}" "${_extra_forwards[@]}")
 if [ "${USE_LXD_PROXY}" = "1" ]; then
     echo "$($_ORANGE_)Skipping iptables setup; will configure LXD proxy devices$($_WHITE_)"
 else
+    if [ -z "${INTERNET_ETH}" ]; then
+        INTERNET_ETH="eth0"
+        echo "$($_ORANGE_)INTERNET_ETH not set, defaulting to ${INTERNET_ETH}$($_WHITE_)"
+    fi
     # Enable Masquerade and NAT rules
     echo "$($_ORANGE_)Install: iptables-persistent$($_WHITE_)"
     DEBIAN_FRONTEND=noninteractive apt-get -y install iptables-persistent > /dev/null
@@ -283,7 +287,12 @@ EOF
     cat <<EOF >> /etc/iptables/rules.v4
 COMMIT
 EOF
-    iptables-restore /etc/iptables/rules.v4
+    if iptables-restore --test /etc/iptables/rules.v4; then
+        iptables-restore /etc/iptables/rules.v4
+    else
+        echo "$($_RED_)Invalid iptables rules; aborting$($_WHITE_)"
+        exit 1
+    fi
 fi
 
 ##### DEBIAN
